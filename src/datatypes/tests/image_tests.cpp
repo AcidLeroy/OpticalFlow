@@ -12,8 +12,13 @@
 #include <chrono>
 #include <ctime>
 #include <iostream>
+#include <cstddef>
 
 namespace oflow {
+TEST(ImageTests, DefaultConstructor) {
+  Image img;
+  ASSERT_EQ(nullptr, img.GetMat());
+}
 TEST(ImageTests, TestMatConstructor) {
   const int num_rows = 256;
   const int num_cols = 256;

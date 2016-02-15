@@ -7,6 +7,7 @@
 
 #ifndef SRC_READERS_VIDEO_FILE_READER_H_
 #define SRC_READERS_VIDEO_FILE_READER_H_
+#include "image.h"
 #include <memory>
 #include <string>
 #include <cstdint>
@@ -16,8 +17,8 @@ namespace oflow {
 
 class VideoFileReader {
   explicit VideoFileReader(const std::string &filename) : filename_{filename} {}
-  std::vector<uint32_t> ReadFrame() {
-    std::vector<uint32_t> frame;
+  Image ReadFrame() {
+    Image frame;
     return frame;
   }
 
