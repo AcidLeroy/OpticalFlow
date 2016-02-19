@@ -11,13 +11,16 @@
 
 namespace oflow {
 
+/**
+ * Class that assumes gray scale images
+ */
 class Image {
  public:
   explicit Image(const std::shared_ptr<cv::Mat> &mat) : mat_(mat) {}
   Image() = default;
   int GetRows() { return mat_->rows; }
   int GetCols() { return mat_->cols; }
-  std::shared_ptr<cv::Mat> GetMat() { return mat_; }
+  std::shared_ptr<cv::Mat> GetMat() const { return mat_; }
 
  private:
   std::shared_ptr<cv::Mat> mat_;

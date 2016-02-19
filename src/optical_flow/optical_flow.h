@@ -12,6 +12,14 @@ namespace oflow {
 
 class OpticalFlow {
  public:
+  OpticalFlow() = default;
+  OpticalFlow(std::vector<double> vx, std::vector<double> vy,
+              std::vector<double> orientation, std::vector<double> magnitude)
+      : vx_(std::move(vx)),
+        vy_(std::move(vy)),
+        orientation_(std::move(orientation)),
+        magnitude_(std::move(orientation)) {}
+
   std::vector<double> GetVx() { return vx_; }
   std::vector<double> GetVy() { return vy_; }
   std::vector<double> GetOrientation() { return orientation_; }
@@ -23,6 +31,11 @@ class OpticalFlow {
   }
   void SetMagnitude(std::vector<double> &magnitude) {
     magnitude_ = std::move(magnitude);
+  }
+
+  bool IsEmpty() {
+    return vx_.empty() && vy_.empty() && orientation_.empty() &&
+           magnitude_.empty();
   }
 
  private:
