@@ -21,7 +21,22 @@ OpticalFlow LKFlow::CalculateVectors(const Image &previous_frame,
 
   if (need_to_init_) {
     InitializePoints(previous_mat);
+  } else if (!points_[0].empty()) {
+    std::vector<uchar> status;
+    std::vector<float> err;
+
+    cv::calcOpticalFlowPyrLK(*previous_mat, *next_mat, points_[0], points_[1],
+                             status, err, win_size, 3, termcrit_, 0, 0.001);
+    size_t i, k;
+    for (i = k = 0; i < points_[1].size(); i++) {
+      if (!status[i]) continue;
+
+      points_[1][k++] = points_[1][i];
+      // cv::circle(image, points_[1][i], 3, cv::Scalar(0, 255, 0), -1, 8);
+    }
+    points_[1].resize(k);
   }
+  std::swap(points_[1], points_[0]);
 }
 
 void LKFlow::InitializePoints(const std::shared_ptr<cv::Mat> &previous_mat) {

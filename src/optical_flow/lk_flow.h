@@ -10,6 +10,7 @@
 #include "optical_flow.h"
 #include "image.h"
 #include <opencv2/imgproc/imgproc.hpp>
+#include <array>
 
 #include <vector>
 
@@ -28,7 +29,7 @@ class LKFlow {
 
  private:
   bool need_to_init_ = true;
-  std::vector<cv::Point2f> points_[2];
+  std::array<std::vector<cv::Point2f>, 2> points_;
   const int kMaxCorners_ = 500;  // Maximum number of corners to return. If
                                  // there are more corners than are found, the
                                  // strongest of them is returned.
@@ -52,12 +53,13 @@ class LKFlow {
   const bool kUseHarrisDetector_ =
       false;  // Parameter inidicating whether to use Harris detector
   const double kK_ = 0.04;  // Free parameter of the Harris detector
-  cv::Size sub_pix_win_size_ =
-      cv::Size(10, 10);  // Half of the side length of the search window.
+  cv::Size sub_pix_win_size_{
+      10, 10};  // Half of the side length of the search window.
   cv::TermCriteria termcrit_ =
       cv::TermCriteria(cv::TermCriteria::COUNT | cv::TermCriteria::EPS, 20,
                        0.03);  // Criteria for termination of the iterative
                                // process of corner refinement.
+  cv::Size win_size{31, 31};
 };
 
 } /* namespace oflow */
