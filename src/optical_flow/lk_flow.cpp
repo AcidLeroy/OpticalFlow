@@ -7,16 +7,18 @@
 
 #include "lk_flow.h"
 #include "optical_flow.h"
+#include "vector_statistics.h"
 #include <vector>
+#include <iostream>
 #include "opencv2/video/tracking.hpp"
 namespace oflow {
-OpticalFlow LKFlow::CalculateVectors(const Image &previous_frame,
-                                     const Image &next_frame) {
-  OpticalFlow of;
+OpticalFlow<> LKFlow::CalculateVectors(const Image &previous_frame,
+                                       const Image &next_frame) {
   auto previous_mat = previous_frame.GetMat();
   auto next_mat = next_frame.GetMat();
   if (previous_mat == nullptr || next_mat == nullptr) {
-    return of;
+    // return empty optical flow struct
+    return OpticalFlow<>{};
   }
 
   if (need_to_init_) {
@@ -36,6 +38,9 @@ OpticalFlow LKFlow::CalculateVectors(const Image &previous_frame,
     }
     points_[1].resize(k);
   }
+  VectorStatistics<> vs{points_};
+  OpticalFlow<> of{vs.VelocityX(), vs.VelocityY(), vs.Orientation(),
+                   vs.Magnitude()};
   std::swap(points_[1], points_[0]);
 }
 
@@ -44,6 +49,7 @@ void LKFlow::InitializePoints(const std::shared_ptr<cv::Mat> &previous_mat) {
   cv::goodFeaturesToTrack(*previous_mat, points_[1], kMaxCorners_,
                           kQualityLevel_, kMinDistance_, kMask_, kBlockSize_,
                           kUseHarrisDetector_, kK_);
+  std::cout << "Number of points is: " << points_[1].size() << std::endl;
   cv::cornerSubPix(*previous_mat, points_[1], sub_pix_win_size_,
                    cv::Size(-1, -1), termcrit_);
   need_to_init_ = false;

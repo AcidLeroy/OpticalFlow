@@ -39,7 +39,9 @@ TEST(LKFlowTests, TwoFrames) {
   const int num_rows = 256;
   const int num_cols = 256;
   auto a = std::make_shared<cv::Mat>(cv::Mat(num_rows, num_cols, CV_8U));
-  auto b = std::make_shared<cv::Mat>(cv::Mat::ones(num_rows, num_cols, CV_8U));
+  auto b = std::make_shared<cv::Mat>(cv::Mat(num_rows, num_cols, CV_8U));
+  cv::randu(*a, cv::Scalar::all(0), cv::Scalar::all(255));
+  cv::randu(*b, cv::Scalar::all(0), cv::Scalar::all(255));
   Image previous_frame(a), next_frame(b);
   LKFlow flow;
   auto of = flow.CalculateVectors(previous_frame, next_frame);

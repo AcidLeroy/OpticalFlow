@@ -8,6 +8,7 @@
 #ifndef SRC_OPTICAL_FLOW_LK_FLOW_H_
 #define SRC_OPTICAL_FLOW_LK_FLOW_H_
 #include "optical_flow.h"
+#include "vector_statistics.h"
 #include "image.h"
 #include <opencv2/imgproc/imgproc.hpp>
 #include <array>
@@ -21,15 +22,15 @@ namespace oflow {
  */
 class LKFlow {
  public:
-  OpticalFlow CalculateVectors(const Image &previous_frame,
-                               const Image &next_frame);
+  OpticalFlow<> CalculateVectors(const Image &previous_frame,
+                                 const Image &next_frame);
 
  protected:
   void InitializePoints(const std::shared_ptr<cv::Mat> &previous_mat);
 
  private:
   bool need_to_init_ = true;
-  std::array<std::vector<cv::Point2f>, 2> points_;
+  vector_type points_;
   const int kMaxCorners_ = 500;  // Maximum number of corners to return. If
                                  // there are more corners than are found, the
                                  // strongest of them is returned.

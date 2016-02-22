@@ -10,28 +10,21 @@
 #include <vector>
 namespace oflow {
 
+template <typename T = float>
 class OpticalFlow {
  public:
   OpticalFlow() = default;
-  OpticalFlow(std::vector<double> vx, std::vector<double> vy,
-              std::vector<double> orientation, std::vector<double> magnitude)
+  OpticalFlow(std::vector<T> vx, std::vector<T> vy, std::vector<T> orientation,
+              std::vector<T> magnitude)
       : vx_(std::move(vx)),
         vy_(std::move(vy)),
         orientation_(std::move(orientation)),
         magnitude_(std::move(orientation)) {}
 
-  std::vector<double> GetVx() { return vx_; }
-  std::vector<double> GetVy() { return vy_; }
-  std::vector<double> GetOrientation() { return orientation_; }
-  std::vector<double> GetMagnitude() { return magnitude_; }
-  void SetVx(std::vector<double> &vx) { vx_ = std::move(vx); }
-  void SetVy(std::vector<double> &vy) { vy_ = std::move(vy); }
-  void SetOrientation(std::vector<double> &orientation) {
-    orientation_ = std::move(orientation);
-  }
-  void SetMagnitude(std::vector<double> &magnitude) {
-    magnitude_ = std::move(magnitude);
-  }
+  std::vector<T> GetVx() { return vx_; }
+  std::vector<T> GetVy() { return vy_; }
+  std::vector<T> GetOrientation() { return orientation_; }
+  std::vector<T> GetMagnitude() { return magnitude_; }
 
   bool IsEmpty() {
     return vx_.empty() && vy_.empty() && orientation_.empty() &&
@@ -39,10 +32,10 @@ class OpticalFlow {
   }
 
  private:
-  std::vector<double> vx_;
-  std::vector<double> vy_;
-  std::vector<double> orientation_;
-  std::vector<double> magnitude_;
+  std::vector<T> vx_;
+  std::vector<T> vy_;
+  std::vector<T> orientation_;
+  std::vector<T> magnitude_;
 };
 
 } /* namespace oflow */
