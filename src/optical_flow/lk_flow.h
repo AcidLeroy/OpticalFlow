@@ -27,10 +27,12 @@ class LKFlow {
 
  protected:
   void InitializePoints(const std::shared_ptr<cv::Mat> &previous_mat);
+  void SanitizePoints(const std::vector<uchar> &status);
 
  private:
   bool need_to_init_ = true;
   vector_type points_;
+
   const int kMaxCorners_ = 500;  // Maximum number of corners to return. If
                                  // there are more corners than are found, the
                                  // strongest of them is returned.
