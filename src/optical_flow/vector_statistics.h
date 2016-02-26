@@ -64,12 +64,12 @@ class VectorStatistics {
     std::vector<T> theta;
     theta.reserve(points_[0].size());
     for (size_t i = 0; i < points_[0].size(); ++i) {
-      double dot_prod =
+      T dot_prod =
           points_[0][i].x * points_[1][i].x + points_[0][i].y * points_[1][i].y;
-      double mag = std::sqrt(points_[0][i].x * points_[0][i].x +
-                             points_[0][i].y * points_[0][i].y) *
-                   std::sqrt(points_[1][i].x * points_[1][i].x +
-                             points_[1][i].y * points_[1][i].y);
+      T mag = std::sqrt(points_[0][i].x * points_[0][i].x +
+                        points_[0][i].y * points_[0][i].y) *
+              std::sqrt(points_[1][i].x * points_[1][i].x +
+                        points_[1][i].y * points_[1][i].y);
       theta.push_back(std::acos(dot_prod / mag));
     }
     return theta;

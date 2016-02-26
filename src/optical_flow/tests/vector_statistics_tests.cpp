@@ -51,13 +51,13 @@ TEST(VectorStatistics, Magnitude) {
   std::vector<cv::Point2f> list_a{a_pt, b_pt}, list_b{b_pt, a_pt};
   vector_type test_vecs{list_a, list_b};
   VectorStatistics<> vs{test_vecs};
-  double mag_1 = std::sqrt(std::pow(static_cast<double>(1.0 - 2.0), 2) +
-                           std::pow(static_cast<double>(2.0 - 3.0), 2));
-  double mag_2 = std::sqrt(std::pow(static_cast<double>(2.0 - 1.0), 2) +
-                           std::pow(static_cast<double>(3.0 - 2.0), 2));
-  std::vector<double> expected_mags{mag_1, mag_2};
-  ASSERT_DOUBLE_EQ(expected_mags[0], vs.Magnitude()[0]);
-  ASSERT_DOUBLE_EQ(expected_mags[1], vs.Magnitude()[1]);
+  float mag_1 = std::sqrt(std::pow(static_cast<float>(1.0 - 2.0), 2) +
+                          std::pow(static_cast<float>(2.0 - 3.0), 2));
+  float mag_2 = std::sqrt(std::pow(static_cast<float>(2.0 - 1.0), 2) +
+                          std::pow(static_cast<float>(3.0 - 2.0), 2));
+  std::vector<float> expected_mags{mag_1, mag_2};
+  ASSERT_FLOAT_EQ(expected_mags[0], vs.Magnitude()[0]);
+  ASSERT_FLOAT_EQ(expected_mags[1], vs.Magnitude()[1]);
 }
 
 TEST(VectorStatistics, Orientation) {
@@ -65,12 +65,10 @@ TEST(VectorStatistics, Orientation) {
   std::vector<cv::Point2f> list_a{a_pt, b_pt}, list_b{b_pt, a_pt};
   vector_type test_vecs{list_a, list_b};
   VectorStatistics<> vs{test_vecs};
-  // numbers calculated using the MATLAB formula:
-  // costheta = dot(a,b)/(norm(a)*norm(b));
-  // theta = acos(costheta);
-  double expected_orientation = 0.785398163397448;
+  // Orientation is 45 degrees.
+  float expected_orientation = 0.7853982;
   auto actual_orientation = vs.Orientation();
-  ASSERT_DOUBLE_EQ(expected_orientation, actual_orientation[0]);
+  ASSERT_FLOAT_EQ(expected_orientation, actual_orientation[0]);
 }
 
 }  // End namespace oflow

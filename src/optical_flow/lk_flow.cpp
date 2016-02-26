@@ -29,16 +29,17 @@ OpticalFlow<> LKFlow::CalculateVectors(const Image &previous_frame,
       cv::calcOpticalFlowPyrLK(*previous_mat, *next_mat, points_[0], points_[1],
                                status, err, win_size, 3, termcrit_, 0, 0.001);
       SanitizePoints(status);
+      VectorStatistics<> vs{points_};
+      OpticalFlow<> of{vs.VelocityX(), vs.VelocityY(), vs.Orientation(),
+                       vs.Magnitude()};
+      std::swap(points_[1], points_[0]);
+      return of;
     }
-    VectorStatistics<> vs{points_};
-    OpticalFlow<> of{vs.VelocityX(), vs.VelocityY(), vs.Orientation(),
-                     vs.Magnitude()};
+
     std::swap(points_[1], points_[0]);
-    return of;
-  } else {
-    // Return empty structure
-    return OpticalFlow<>{};
   }
+  // Return empty structure
+  return OpticalFlow<>{};
 }
 
 void LKFlow::InitializePoints(const std::shared_ptr<cv::Mat> &previous_mat) {
