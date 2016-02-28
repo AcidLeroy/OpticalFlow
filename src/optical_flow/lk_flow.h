@@ -24,9 +24,9 @@ class LKFlow {
  public:
   OpticalFlow<> CalculateVectors(const Image &previous_frame,
                                  const Image &next_frame);
-  vector_type GetTrackedPoints() { return points_; }
+  vector_type GetTrackedPoints() const { return points_; }
 
-  bool ArePointsInitialized() { return !need_to_init_; }
+  bool ArePointsInitialized() const { return !need_to_init_; }
   void ReinitializePointsToTrack() { need_to_init_ = true; }
 
  protected:

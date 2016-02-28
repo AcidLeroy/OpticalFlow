@@ -47,7 +47,6 @@ void LKFlow::InitializePoints(const std::shared_ptr<cv::Mat> &previous_mat) {
   cv::goodFeaturesToTrack(*previous_mat, points_[0], kMaxCorners_,
                           kQualityLevel_, kMinDistance_, kMask_, kBlockSize_,
                           kUseHarrisDetector_, kK_);
-  std::cout << "Number of points is: " << points_[0].size() << std::endl;
   cv::cornerSubPix(*previous_mat, points_[0], sub_pix_win_size_,
                    cv::Size(-1, -1), termcrit_);
   need_to_init_ = false;

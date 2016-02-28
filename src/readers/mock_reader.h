@@ -10,6 +10,7 @@
 #include <string>
 #include <memory>
 #include <cstdint>
+#include "image.h"
 
 #include "gmock/gmock.h"
 
@@ -17,9 +18,10 @@ namespace oflow {
 
 class MockReader {
  public:
-  // Mock un interesting constructor
-  explicit MockReader(const std::string &filename) {}
-  MOCK_CONST_METHOD0(ReadFrame, std::vector<uint32_t>());
+  // Mock uninteresting constructor
+  explicit MockReader(const std::string& filename) {}
+
+  MOCK_METHOD0(ReadFrame, std::shared_ptr<Image>());
 };
 
 } /* namespace oflow */

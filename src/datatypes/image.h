@@ -18,6 +18,8 @@ class Image {
  public:
   explicit Image(const std::shared_ptr<cv::Mat> &mat) : mat_(mat) {}
   Image() = default;
+  Image(Image &img) = default;
+  Image(Image &&img) = default;
   int GetRows() { return mat_->rows; }
   int GetCols() { return mat_->cols; }
   std::shared_ptr<cv::Mat> GetMat() const { return mat_; }
