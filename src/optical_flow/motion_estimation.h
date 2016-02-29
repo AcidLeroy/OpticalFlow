@@ -9,6 +9,8 @@
 #define SRC_OPTICAL_FLOW_MOTION_ESTIMATION_H_
 
 #include <memory>
+#include <vector>
+#include <algorithm>
 #include "optical_flow.h"
 
 namespace oflow {
@@ -26,19 +28,38 @@ class MotionEstimation {
  public:
   explicit MotionEstimation(std::shared_ptr<ReaderType> reader)
       : reader_(reader){};
+
   template <typename OpticalFlowType>
   void EstimateMotion(std::shared_ptr<OpticalFlowType> flow) {
     auto current_frame = reader_->ReadFrame();
+    if (current_frame == nullptr)
+      throw MotionEstimationException("There are no frames to read!");
     auto next_frame = reader_->ReadFrame();
     if (next_frame == nullptr)
       throw MotionEstimationException("There is only one frame to read!");
 
     while (1) {
       auto stats = flow->CalculateVectors(*current_frame, *next_frame);
+
       std::swap(current_frame, next_frame);
       next_frame = reader_->ReadFrame();
       if (next_frame == nullptr) break;
     }
+  }
+
+  template <typename T = double>
+  std::vector<uint8_t> ThresholdVector(const std::vector<T>& points_to_thresh,
+                                       double percent_of_max) const {
+    auto max_val =
+        std::max_element(points_to_thresh.cbegin(), points_to_thresh.cend());
+    auto max_thresh = *max_val * percent_of_max;
+    std::vector<uint8_t> result;
+    result.reserve(points_to_thresh.size());
+    for (auto& i : points_to_thresh) {
+      if (i < max_thresh) result.push_back(0);
+      result.push_back(1);
+    }
+    return result;
   }
 
  private:
