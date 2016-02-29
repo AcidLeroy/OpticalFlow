@@ -56,8 +56,10 @@ class MotionEstimation {
     std::vector<uint8_t> result;
     result.reserve(points_to_thresh.size());
     for (auto& i : points_to_thresh) {
-      if (i < max_thresh) result.push_back(0);
-      result.push_back(1);
+      if (i < max_thresh)
+        result.push_back(0);
+      else
+        result.push_back(1);
     }
     return result;
   }
