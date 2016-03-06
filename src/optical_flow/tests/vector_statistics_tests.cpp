@@ -15,21 +15,31 @@
 
 namespace oflow {
 
-TEST(VectorStatistics, CvConstructor) {
+class VectorStatisticsFixture : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    original_image_.reset(new cv::Mat(num_rows_, num_cols_, CV_8U));
+    cv::randu(*original_image_, cv::Scalar::all(0), cv::Scalar::all(255));
+  }
+  std::unique_ptr<cv::Mat> original_image_;
+  const uint32_t num_rows_ = 32, num_cols_ = 32;
+};
+
+TEST_F(VectorStatisticsFixture, CvConstructor) {
   vector_type points_;
   VectorStatistics<> vs(points_);
 }
-TEST(VectorStatistics, BadSizes) {
+TEST_F(VectorStatisticsFixture, BadSizes) {
   cv::Point2f a_pt{1.0, 2.0}, b_pt{2.0, 3.0};
   std::vector<cv::Point2f> list_a{a_pt}, list_b{b_pt, a_pt};
-  vector_type test_vecs{list_a, list_b};
+  vector_type test_vecs{{list_a, list_b}};
   ASSERT_THROW(VectorStatistics<> vs{test_vecs}, VectorStatisticsException);
 }
 
 TEST(VectorStatistics, VelocityX) {
   cv::Point2f a_pt{1.0, 2.0}, b_pt{2.0, 3.0};
   std::vector<cv::Point2f> list_a{a_pt}, list_b{b_pt};
-  vector_type test_vecs{list_a, list_b};
+  vector_type test_vecs{{list_a, list_b}};
   VectorStatistics<> vs{test_vecs};
   double expected_velocity_x = a_pt.x - b_pt.x;
   auto actual_velocity_x = vs.VelocityX();
@@ -39,7 +49,7 @@ TEST(VectorStatistics, VelocityX) {
 TEST(VectorStatistics, VelocityY) {
   cv::Point2f a_pt{1.0, 2.0}, b_pt{2.0, 3.0};
   std::vector<cv::Point2f> list_a{a_pt}, list_b{b_pt};
-  vector_type test_vecs{list_a, list_b};
+  vector_type test_vecs{{list_a, list_b}};
   VectorStatistics<> vs{test_vecs};
   double expected_velocity_y = a_pt.y - b_pt.y;
   auto actual_velocity_y = vs.VelocityY();
@@ -49,7 +59,7 @@ TEST(VectorStatistics, VelocityY) {
 TEST(VectorStatistics, Magnitude) {
   cv::Point2f a_pt{1.0, 2.0}, b_pt{2.0, 3.0};
   std::vector<cv::Point2f> list_a{a_pt, b_pt}, list_b{b_pt, a_pt};
-  vector_type test_vecs{list_a, list_b};
+  vector_type test_vecs{{list_a, list_b}};
   VectorStatistics<> vs{test_vecs};
   float mag_1 = std::sqrt(std::pow(static_cast<float>(1.0 - 2.0), 2) +
                           std::pow(static_cast<float>(2.0 - 3.0), 2));
@@ -63,7 +73,7 @@ TEST(VectorStatistics, Magnitude) {
 TEST(VectorStatistics, Orientation) {
   cv::Point2f a_pt{3.0, 0.0}, b_pt{5.0, 5.0};
   std::vector<cv::Point2f> list_a{a_pt, b_pt}, list_b{b_pt, a_pt};
-  vector_type test_vecs{list_a, list_b};
+  vector_type test_vecs{{list_a, list_b}};
   VectorStatistics<> vs{test_vecs};
   // Orientation is 45 degrees.
   float expected_orientation = 0.7853982;

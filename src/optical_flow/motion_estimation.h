@@ -40,7 +40,9 @@ class MotionEstimation {
 
     while (1) {
       auto stats = flow->CalculateVectors(*current_frame, *next_frame);
-
+      auto thresh_mag = ThresholdVector(stats.GetMagnitude(), 0.25);
+      auto thesh_bin_image = PointsToMat(stats.GetNumRows(), stats.GetNumRows(),
+                                         thresh_mag, stats.GetPoints());
       std::swap(current_frame, next_frame);
       next_frame = reader_->ReadFrame();
       if (next_frame == nullptr) break;
@@ -62,6 +64,17 @@ class MotionEstimation {
         result.push_back(1);
     }
     return result;
+  }
+
+  template <typename T = float>
+  cv::Mat PointsToMat(int num_rows, int num_cols,
+                      const std::vector<T>& intensities,
+                      std::vector<cv::Point_<float>>& points) {
+    cv::Mat test_array = cv::Mat_<T>::zeros(num_rows, num_cols);
+    for (size_t i = 0; i < points.size(); ++i) {
+      test_array.at<uchar>(points[i].x, points[i].y) = intensities[i];
+    }
+    return test_array;
   }
 
  private:

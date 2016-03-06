@@ -30,8 +30,9 @@ OpticalFlow<> LKFlow::CalculateVectors(const Image &previous_frame,
                                status, err, win_size, 3, termcrit_, 0, 0.001);
       SanitizePoints(status);
       VectorStatistics<> vs{points_};
-      OpticalFlow<> of{vs.VelocityX(), vs.VelocityY(), vs.Orientation(),
-                       vs.Magnitude()};
+      OpticalFlow<> of{vs.VelocityX(),    vs.VelocityY(), vs.Orientation(),
+                       vs.Magnitude(),    points_[0],     previous_mat->rows,
+                       previous_mat->cols};
       std::swap(points_[1], points_[0]);
       return of;
     }

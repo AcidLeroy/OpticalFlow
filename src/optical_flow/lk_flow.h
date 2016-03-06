@@ -28,6 +28,7 @@ class LKFlow {
 
   bool ArePointsInitialized() const { return !need_to_init_; }
   void ReinitializePointsToTrack() { need_to_init_ = true; }
+  void UseAllPointsInImage(bool use_all) { use_all_points_ = use_all; }
 
  protected:
   void InitializePoints(const std::shared_ptr<cv::Mat> &previous_mat);
@@ -35,6 +36,7 @@ class LKFlow {
 
  private:
   bool need_to_init_ = true;
+  bool use_all_points_ = false;
   vector_type points_;
 
   const int kMaxCorners_ = 500;  // Maximum number of corners to return. If

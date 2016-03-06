@@ -88,4 +88,18 @@ TEST(MotionEstimation, ThresholdFlowStats) {
   ASSERT_EQ(expected, actual);
 }
 
+TEST(MotionEstimation, PointsToMat) {
+  std::shared_ptr<MockReader> mock(new MockReader{"some_file.mov"});
+  MotionEstimation<MockReader> me(mock);
+  cv::Mat original_image = cv::Mat::zeros(3, 3, CV_32F);
+  std::vector<cv::Point_<float>> points{{0, 0}, {1, 1}, {2, 2}};
+  std::vector<float> magnitudes{1.0, 2.0, 3.0};
+  auto test_array = me.PointsToMat<float>(
+      original_image.rows, original_image.cols, magnitudes, points);
+
+  ASSERT_EQ(magnitudes[0], test_array.at<uchar>(0, 0));
+  ASSERT_EQ(magnitudes[1], test_array.at<uchar>(1, 1));
+  ASSERT_EQ(magnitudes[2], test_array.at<uchar>(2, 2));
+}
+
 }  // end namepsace oflow

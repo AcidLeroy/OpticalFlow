@@ -21,8 +21,10 @@ class VectorStatisticsException : public std::runtime_error {
   explicit VectorStatisticsException(const char* what_arg)
       : runtime_error(what_arg) {}
 };
-
+// vector type consists of two vectors of points. The first vector represents
+// the previous image's points, and the second represents the second's.
 using vector_type = std::array<std::vector<cv::Point_<float>>, 2>;
+
 template <typename T = float>
 class VectorStatistics {
  public:
