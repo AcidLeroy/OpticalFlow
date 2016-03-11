@@ -8,6 +8,7 @@
 #ifndef SRC_DATATYPES_IMAGE_H_
 #define SRC_DATATYPES_IMAGE_H_
 #include <opencv2/imgproc/imgproc.hpp>
+#include <memory>
 
 namespace oflow {
 

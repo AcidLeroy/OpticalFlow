@@ -28,7 +28,7 @@ using vector_type = std::array<std::vector<cv::Point_<float>>, 2>;
 template <typename T = float>
 class VectorStatistics {
  public:
-  explicit VectorStatistics(const vector_type& points) : points_{points} {
+  explicit VectorStatistics(const vector_type& points) : points_(points) {
     if (points_[0].size() != points_[1].size()) {
       throw VectorStatisticsException(std::string(
           "points[0].size = " + std::to_string(points_[0].size()) +

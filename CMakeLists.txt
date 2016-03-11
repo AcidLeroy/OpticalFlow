@@ -13,11 +13,14 @@ add_subdirectory(external/gtest)
 add_subdirectory(external/celero)
 
 message("Gtest source dir is: ${gtest_SOURCE_DIR}")
+message("Gmock source dir is: ${gmock_SOURCE_DIR}")
 message("Celero source dir is: ${CeleroProject_SOURCE_DIR}")
 
 include_directories(
   ${gtest_SOURCE_DIR}/include 
   ${gtest_SOURCE_DIR}
+  ${gmock_SOURCE_DIR}/include 
+  ${gmock_SOURCE_DIR}
   ${CeleroProject_SOURCE_DIR}/include
   ${OpenCV_INCLUDE_DIRS}
   src/datatypes

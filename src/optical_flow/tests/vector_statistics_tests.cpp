@@ -10,6 +10,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 #include <array>
+#include <memory>
 #include "vector_statistics.h"
 #include <cmath>
 
