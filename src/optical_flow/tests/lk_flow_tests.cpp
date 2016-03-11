@@ -94,19 +94,15 @@ TEST(LkFlowTests, NoFrames) {
   ASSERT_TRUE(of.IsEmpty());
 }
 
-TEST(LKFlowTests, UseAllPointsInImage) {
-  // This function does what MATLAB does, i.e. calculates the optical flow over
-  // the entire image passed in.
-  const int num_rows = 256;
-  const int num_cols = 256;
-  auto a = std::make_shared<cv::Mat>(cv::Mat(num_rows, num_cols, CV_8U));
-  auto b = std::make_shared<cv::Mat>(cv::Mat(num_rows, num_cols, CV_8U));
-  cv::randu(*a, cv::Scalar::all(0), cv::Scalar::all(255));
-  cv::randu(*b, cv::Scalar::all(0), cv::Scalar::all(255));
-  Image previous_frame(a), next_frame(a);
+TEST_F(TestLKFlow, UseAllPointsInImage) {
+  Image previous_frame(a_), next_frame(b_);
   LKFlow flow;
   flow.UseAllPointsInImage(true);
   auto of = flow.CalculateVectors(previous_frame, next_frame);
+  EXPECT_FLOAT_EQ(num_rows_ * num_cols_, of.GetMagnitude().size());
+  EXPECT_FLOAT_EQ(num_rows_ * num_cols_, of.GetOrientation().size());
+  EXPECT_FLOAT_EQ(num_rows_ * num_cols_, of.GetVx().size());
+  EXPECT_FLOAT_EQ(num_rows_ * num_cols_, of.GetVy().size());
 }
 
 }  // end namespace oflow

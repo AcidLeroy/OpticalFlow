@@ -44,12 +44,22 @@ OpticalFlow<> LKFlow::CalculateVectors(const Image &previous_frame,
 }
 
 void LKFlow::InitializePoints(const std::shared_ptr<cv::Mat> &previous_mat) {
-  // Get features to track
-  cv::goodFeaturesToTrack(*previous_mat, points_[0], kMaxCorners_,
-                          kQualityLevel_, kMinDistance_, kMask_, kBlockSize_,
-                          kUseHarrisDetector_, kK_);
-  cv::cornerSubPix(*previous_mat, points_[0], sub_pix_win_size_,
-                   cv::Size(-1, -1), termcrit_);
+  points_[0].clear();
+  if (use_all_points_) {
+    points_[0].reserve(previous_mat->rows * previous_mat->cols);
+    for (size_t row = 0; row < previous_mat->rows; ++row) {
+      for (size_t col = 0; col < previous_mat->cols; ++col) {
+        points_[0].push_back(cv::Point_<float>(row, col));
+      }
+    }
+  } else {
+    // Get features to track
+    cv::goodFeaturesToTrack(*previous_mat, points_[0], kMaxCorners_,
+                            kQualityLevel_, kMinDistance_, kMask_, kBlockSize_,
+                            kUseHarrisDetector_, kK_);
+    cv::cornerSubPix(*previous_mat, points_[0], sub_pix_win_size_,
+                     cv::Size(-1, -1), termcrit_);
+  }
   need_to_init_ = false;
 }
 

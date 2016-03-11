@@ -1,7 +1,6 @@
 #
 # lk_flow
 #
-
 set(lib_name lk_flow)
 # Google Tests
 add_executable(${lib_name}_tests tests/${lib_name}_tests.cpp ${lib_name}.cpp )
@@ -17,6 +16,8 @@ add_executable(${lib_name}_benchmark tests/${lib_name}_benchmark.cpp ${lib_name}
 target_link_libraries(${lib_name}_benchmark
   celero
   ${OpenCV_LIBS})
+  
+add_library(lk_flow STATIC lk_flow.cpp)
 
 
 #
@@ -51,5 +52,14 @@ target_link_libraries(${lib_name}_tests
   gtest gtest_main gmock
   ${OpenCV_LIBS})
 
+#
+# Optical Flow Tests
+#
+set(lib_name optical_flow)
+# Google Tests
+add_executable(${lib_name}_tests tests/${lib_name}_tests.cpp )
+target_link_libraries(${lib_name}_tests
+  gtest gtest_main gmock
+  ${OpenCV_LIBS})
 
 

@@ -41,8 +41,9 @@ class MotionEstimation {
     while (1) {
       auto stats = flow->CalculateVectors(*current_frame, *next_frame);
       auto thresh_mag = ThresholdVector(stats.GetMagnitude(), 0.25);
-      auto thesh_bin_image = PointsToMat(stats.GetNumRows(), stats.GetNumRows(),
-                                         thresh_mag, stats.GetPoints());
+      auto thresh_bin_image =
+          PointsToMat(stats.GetNumRows(), stats.GetNumRows(), thresh_mag,
+                      stats.GetPoints());
       std::swap(current_frame, next_frame);
       next_frame = reader_->ReadFrame();
       if (next_frame == nullptr) break;
