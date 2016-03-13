@@ -29,7 +29,7 @@ class OpticalFlow {
         num_cols_(num_cols) {}
 
   std::vector<T>& GetVx() { return vx_; }
-  cv::Mat_<T> GetVxMat() { return PointsToMat(vx_); }
+  cv::UMat GetVxMat() { return PointsToMat(vx_); }
   std::vector<T>& GetVy() { return vy_; }
   std::vector<T>& GetOrientation() { return orientation_; }
   std::vector<T>& GetMagnitude() { return magnitude_; }
@@ -43,11 +43,12 @@ class OpticalFlow {
   }
 
  private:
-  cv::Mat_<T> PointsToMat(const std::vector<T>& intensities) const {
-    cv::Mat test_array = cv::Mat_<T>::zeros(num_rows_, num_cols_);
+  cv::UMat PointsToMat(const std::vector<T>& intensities) const {
+    cv::UMat test_array =
+        cv::UMat::zeros(num_rows_, num_cols_, cv::DataType<T>::type);
     for (size_t i = 0; i < value_locations_.size(); ++i) {
-      test_array.at<T>(value_locations_[i].x, value_locations_[i].y) =
-          intensities[i];
+      test_array.getMat(cv::ACCESS_RW)
+          .at<T>(value_locations_[i].x, value_locations_[i].y) = intensities[i];
     }
     return test_array;
   }

@@ -21,7 +21,7 @@ class MockReader {
   // Mock uninteresting constructor
   explicit MockReader(const std::string& filename) {}
 
-  MOCK_METHOD0(ReadFrame, std::shared_ptr<Image>());
+  MOCK_METHOD0(ReadFrame, std::shared_ptr<Image<>>());
 };
 
 } /* namespace oflow */

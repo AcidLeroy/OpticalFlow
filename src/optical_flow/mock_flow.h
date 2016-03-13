@@ -14,8 +14,8 @@
 namespace oflow {
 class MockFlow {
  public:
-  MOCK_METHOD2(CalculateVectors, OpticalFlow<>(const Image &previous_frame,
-                                               const Image &next_frame));
+  MOCK_METHOD2(CalculateVectors, OpticalFlow<>(const Image<> &previous_frame,
+                                               const Image<> &next_frame));
   MOCK_CONST_METHOD0(GetTrackedPoints, vector_type());
   MOCK_CONST_METHOD0(ArePointsInitialized, bool());
   MOCK_CONST_METHOD0(ReinitializePointsToTrack, void());

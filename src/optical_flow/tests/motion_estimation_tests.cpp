@@ -28,7 +28,7 @@ TEST(MotionEstimation, NoFramesToRead) {
   cv::randu(*a_, 0, 256);
   // Stuck using shared pointers because it was a pain to use unique ptrs with
   // google mock
-  std::shared_ptr<Image> frame1{new Image(a_)};
+  std::shared_ptr<Image<>> frame1{new Image<>(a_)};
   EXPECT_CALL(*mock, ReadFrame()).WillOnce(Return(nullptr));
 
   std::shared_ptr<MockFlow> mflow{new MockFlow()};
@@ -43,7 +43,7 @@ TEST(MotionEstimation, OnlyOneFrameInImageSequence) {
   cv::randu(*a_, 0, 256);
   // Stuck using shared pointers because it was a pain to use unique ptrs with
   // google mock
-  std::shared_ptr<Image> frame1{new Image(a_)};
+  std::shared_ptr<Image<>> frame1{new Image<>(a_)};
   EXPECT_CALL(*mock, ReadFrame())
       .WillOnce(Return(frame1))
       .WillOnce(Return(nullptr));
@@ -63,8 +63,8 @@ TEST(MotionEstimation, ReadTwoImages) {
   cv::randu(*b_, 0, 256);
   // Stuck using shared pointers because it was a pain to use unique ptrs with
   // google mock
-  std::shared_ptr<Image> frame1{new Image(a_)};
-  std::shared_ptr<Image> frame2{new Image(b_)};
+  std::shared_ptr<Image<>> frame1{new Image<>(a_)};
+  std::shared_ptr<Image<>> frame2{new Image<>(b_)};
   EXPECT_CALL(*mock, ReadFrame())
       .WillOnce(Return(frame1))
       .WillOnce(Return(frame2))

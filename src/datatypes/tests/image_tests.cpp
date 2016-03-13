@@ -16,21 +16,21 @@
 
 namespace oflow {
 TEST(ImageTests, DefaultConstructor) {
-  Image img;
+  Image<> img;
   ASSERT_EQ(nullptr, img.GetMat());
 }
 TEST(ImageTests, TestMatConstructor) {
   const int num_rows = 256;
   const int num_cols = 256;
   auto a = std::make_shared<cv::Mat>(cv::Mat(num_rows, num_cols, CV_8U));
-  Image img(a);
+  Image<> img(a);
 }
 
 TEST(ImageTests, TestSize) {
   const int num_rows = 256;
   const int num_cols = 256;
   auto a = std::make_shared<cv::Mat>(cv::Mat(num_rows, num_cols, CV_8U));
-  Image img(a);
+  Image<> img(a);
   ASSERT_EQ(num_rows, img.GetRows());
   ASSERT_EQ(num_cols, img.GetCols());
 }
@@ -43,7 +43,7 @@ TEST(ImageTests, SpeedOfSecond) {
   start = std::chrono::system_clock::now();
   auto a = std::make_shared<cv::Mat>(cv::Mat(num_rows, num_cols, CV_8U));
   for (size_t i = 0; i < num_iters; ++i) {
-    Image img(a);
+    Image<> img(a);
   }
   end = std::chrono::system_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
