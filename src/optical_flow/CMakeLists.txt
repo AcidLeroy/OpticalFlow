@@ -54,9 +54,9 @@ target_link_libraries(${lib_name}_tests
 #
 set(lib_name optical_flow)
 # Google Tests
-#add_executable(${lib_name}_tests tests/${lib_name}_tests.cpp )
-#target_link_libraries(${lib_name}_tests
-#  gtest gtest_main gmock
-#  ${OpenCV_LIBS})
+add_executable(${lib_name}_tests tests/${lib_name}_tests.cpp )
+target_link_libraries(${lib_name}_tests
+  gtest gtest_main gmock
+  ${OpenCV_LIBS})
 
 

@@ -40,9 +40,9 @@ TEST_F(OpticalFlowTests, CorrectSizeOfMat) {
 
 TEST_F(OpticalFlowTests, CorrectValuesForVx) {
   auto vx_mat = of->GetVxMat();
-  ASSERT_EQ(vx_mat.at<float>(0, 0), 1.0);
-  ASSERT_EQ(vx_mat.at<float>(1, 1), 2.0);
-  ASSERT_EQ(vx_mat.at<float>(2, 2), 3.0);
+  ASSERT_EQ(vx_mat.getMat(cv::ACCESS_RW).at<float>(0, 0), 1.0);
+  ASSERT_EQ(vx_mat.getMat(cv::ACCESS_RW).at<float>(1, 1), 2.0);
+  ASSERT_EQ(vx_mat.getMat(cv::ACCESS_RW).at<float>(2, 2), 3.0);
 }
 
 }  // end namespace oflow
