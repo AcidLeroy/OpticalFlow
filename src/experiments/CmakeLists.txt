@@ -1,0 +1,6 @@
+ set(app_name cross_correlation)
+  # Celero benchmark
+add_executable(${app_name}_benchmark ${app_name}_benchmark.cpp)
+target_link_libraries(${app_name}_benchmark
+  celero
+  ${OpenCV_LIBS})
