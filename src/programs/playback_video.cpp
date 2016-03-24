@@ -17,8 +17,7 @@
 
 int main(int argc, const char* argv[]) {
   const char* keys =
-      "{ h help           | false           | print help message }"
-      "{ c camera         | 0               | enable camera capturing }"
+      "{ h help           |                 | print help message }"
       "{ v video          | test.mov        | use video as input }";
 
   cv::CommandLineParser cmd(argc, argv, keys);
@@ -27,15 +26,25 @@ int main(int argc, const char* argv[]) {
     std::cout << "Usage: playback_video [options]" << std::endl;
     std::cout << "Available options:" << std::endl;
     cmd.printMessage();
-    // return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
   }
 
   std::string vdofile = cmd.get<std::string>("video");
   std::cout << "vdofile = " << vdofile << std::endl;
+
+  if (!cmd.check()) {
+    cmd.printErrors();
+    return 0;
+  }
+
   oflow::VideoFileReader f(vdofile);
 
   while (true) {
     auto image = f.ReadFrame();
+    if (image == nullptr) {
+      std::cout << "No more frames to read." << std::endl;
+      break;
+    }
     auto frame = image->GetMat();
     cv::imshow("Read image", *frame);
     if (::cv::waitKey(30) >= 0) break;
