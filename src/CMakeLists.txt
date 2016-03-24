@@ -1,3 +1,5 @@
 add_subdirectory(datatypes)
 add_subdirectory(optical_flow)
 add_subdirectory(experiments)
+add_subdirectory(readers)
+add_subdirectory(programs)

@@ -6,5 +6,23 @@
  */
 
 #include "video_file_reader.h"
+#include "image.h"
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui.hpp>
 
-namespace oflow {} /* namespace oflow */
+#include <memory>
+
+namespace oflow {
+
+std::shared_ptr<Image<cv::UMat>> VideoFileReader::ReadFrame() {
+  cv::UMat color_frame;
+  auto x = cap_->read(color_frame);
+  if (!x) {
+    return nullptr;
+  }
+  auto gray_frame = std::make_shared<cv::UMat>();
+  cv::cvtColor(color_frame, *gray_frame, cv::COLOR_BGR2GRAY);
+  return std::make_shared<Image<cv::UMat>>(Image<cv::UMat>(gray_frame));
+}
+
+} /* namespace oflow */
