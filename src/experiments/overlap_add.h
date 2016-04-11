@@ -13,6 +13,8 @@ namespace oflow {
 cv::UMat OverlapAdd(const cv::UMat &x_n, const cv::UMat &h_n);
 cv::UMat Dft2(const cv::UMat &x_n, const cv::UMat &h_n);
 cv::UMat Dft(const cv::UMat &x_n);
+/// Pad block image out to num_rows and num cols.
+cv::UMat ZeroPad(const cv::UMat &block, int num_rows, int num_cols);
 
 }  // end namespace oflow
 

@@ -11,6 +11,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 #include <iostream>
+#include <limits>
+#include <algorithm>
 
 namespace oflow {
 
@@ -27,14 +29,82 @@ TEST(OverlapAdd, Dft) {
   EXPECT_EQ(3, x_n.cols);
 
   auto actual_val = Dft(x_n);
-  cv::Mat mat_val = actual_val.getMat(0).t();
+  cv::Mat mat_val = actual_val.getMat(0).t();  // For some reason this is the
+                                               // transposed version of the
+                                               // MATLAB code.
 
-  std::cout << "actual value" << std::endl << mat_val.t() << std::endl;
+  // Just need to get within the ball park
   for (size_t i = 0; i < real_dft_vals.size(); ++i) {
     auto mat_i = i * 2;
-    ASSERT_FLOAT_EQ(real_dft_vals[i], mat_val.at<float>(mat_i));
-    ASSERT_FLOAT_EQ(imginary_dft_vals[i], mat_val.at<float>(mat_i + 1));
+    ASSERT_NEAR(real_dft_vals[i], mat_val.at<float>(mat_i), 1e-3);
+    ASSERT_NEAR(imginary_dft_vals[i], mat_val.at<float>(mat_i + 1), 1e-3);
   }
+}
+
+std::string type2str(int type) {
+  std::string r;
+
+  uchar depth = type & CV_MAT_DEPTH_MASK;
+  uchar chans = 1 + (type >> CV_CN_SHIFT);
+
+  switch (depth) {
+    case CV_8U:
+      r = "8U";
+      break;
+    case CV_8S:
+      r = "8S";
+      break;
+    case CV_16U:
+      r = "16U";
+      break;
+    case CV_16S:
+      r = "16S";
+      break;
+    case CV_32S:
+      r = "32S";
+      break;
+    case CV_32F:
+      r = "32F";
+      break;
+    case CV_64F:
+      r = "64F";
+      break;
+    default:
+      r = "User";
+      break;
+  }
+
+  r += "C";
+  r += (chans + '0');
+
+  return r;
+}
+
+TEST(OverlapAdd, ZeroPads) {
+  std::vector<uint8_t> not_padded{1, 2, 3, 4};
+  cv::UMat not_padded_mat(not_padded, true);
+  not_padded_mat = not_padded_mat.reshape(1, 2);
+
+  std::vector<uint8_t> padded{1, 2, 0, 0, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  cv::UMat padded_mat(padded, true);
+  padded_mat = padded_mat.reshape(1, 4);
+
+  int num_rows = 4;
+  int num_cols = 4;
+
+  cv::UMat actual_mat = ZeroPad(not_padded_mat, num_rows, num_cols);
+
+  ASSERT_EQ(padded_mat.rows, actual_mat.rows);
+  ASSERT_EQ(padded_mat.cols, actual_mat.cols);
+  ASSERT_EQ(padded_mat.type(), actual_mat.type())
+      << " padded = " << type2str(padded_mat.type())
+      << " actual = " << type2str(actual_mat.type())
+      << " not_padded_mat = " << type2str(not_padded_mat.type()) << std::endl;
+
+  cv::Mat regular_mat = actual_mat.getMat(cv::ACCESS_RW);
+  bool eq = std::equal(regular_mat.begin<uchar>(), regular_mat.end<uchar>(),
+                       regular_mat.begin<uchar>());
+  ASSERT_TRUE(eq);
 }
 
 }  // end namepsace oflow

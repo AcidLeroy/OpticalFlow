@@ -31,4 +31,15 @@ cv::UMat Dft(const cv::UMat &x_n) {
   cv::dft(u_complex, u_complex);  // Applying DFT
   return u_complex;
 }
+
+cv::UMat ZeroPad(const cv::UMat &block, int num_rows, int num_cols) {
+  assert(num_cols >= block.cols);
+  int right = num_cols - block.cols;
+  assert(num_rows >= block.rows);
+  int bottom = num_rows - block.rows;
+  cv::UMat padded;
+  copyMakeBorder(block, padded, 0, bottom, 0, right, cv::BORDER_CONSTANT,
+                 cv::Scalar(0));
+  return padded;
+}
 }  // end namespace oflow
