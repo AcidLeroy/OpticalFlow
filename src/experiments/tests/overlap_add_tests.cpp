@@ -107,4 +107,35 @@ TEST(OverlapAdd, ZeroPads) {
   ASSERT_TRUE(eq);
 }
 
+TEST(OverlapAdd, Idft) {
+  std::vector<uint8_t> test_vals{8, 3, 4, 1, 5, 9, 6, 7, 2};
+  std::vector<float> real_dft_vals{45, 0, 0, 0, 13.5, 0, 0, 0, 13.5};
+  std::vector<float> imginary_dft_vals{0,       0, 0,      0,      7.7942,
+                                       -5.1962, 0, 5.1962, -7.7942};
+
+  cv::UMat x_n(test_vals, true);
+  x_n.convertTo(x_n, CV_32F);
+  x_n = x_n.reshape(1, 3);
+  EXPECT_EQ(3, x_n.rows);
+  EXPECT_EQ(3, x_n.cols);
+
+  cv::UMat dft_val = Dft(x_n);
+  cv::UMat orig = Idft(dft_val);
+  cv::Mat output = orig.getMat(cv::ACCESS_RW);
+  cv::Mat x = x_n.getMat(cv::ACCESS_RW);
+  //  std::cout << "output = " << std::endl << output << std::endl;
+  //  std::cout << "test_array " << std::endl << x << std::endl;
+  // Just need to get within the ball park
+  ASSERT_EQ(x.rows, output.rows);
+  ASSERT_EQ(x.cols, output.cols);
+  ASSERT_EQ(x.type(), output.type()) << "x = " << type2str(x.type())
+                                     << " output = " << type2str(output.type());
+
+  for (size_t row = 0; row < output.rows; ++row) {
+    for (size_t col = 0; col < output.cols; ++col) {
+      ASSERT_NEAR(x.at<float>(row, col), output.at<float>(row, col), 1e-3);
+    }
+  }
+}
+
 }  // end namepsace oflow
