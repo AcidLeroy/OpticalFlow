@@ -138,4 +138,19 @@ TEST(OverlapAdd, Idft) {
   }
 }
 
+// With this test I wanted to verify that I can get a rectangle to a Mat object
+// and not a
+TEST(OverlapAdd, GetSubregion) {
+  cv::Mat a(4, 4, CV_32F);
+  for (size_t i = 0; i < a.total(); ++i) {
+    a.at<float>(i) = i;
+  }
+
+  // This returns a reference to the innards of a! Hazahh!
+  cv::Mat b = a(cv::Rect(0, 0, 1, 1));
+  float expected_val = 69.0;
+  b.at<float>(0) = expected_val;
+  ASSERT_FLOAT_EQ(expected_val, a.at<float>(0));
+}
+
 }  // end namepsace oflow
