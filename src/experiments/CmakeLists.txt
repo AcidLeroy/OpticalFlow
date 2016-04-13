@@ -11,3 +11,14 @@ add_executable(${app_name}_tests tests/${app_name}_tests.cpp ${app_name}.cpp)
 target_link_libraries(${app_name}_tests
   gtest gtest_main 
   ${OpenCV_LIBS})
+  
+add_executable(${app_name}_benchmark tests/${app_name}_benchmark.cpp)
+target_link_libraries(${app_name}_benchmark
+  celero
+  ${OpenCV_LIBS})
+
+set(app_name dft)  
+add_executable(${app_name}_benchmark tests/${app_name}_benchmark.cpp)
+target_link_libraries(${app_name}_benchmark
+  celero
+  ${OpenCV_LIBS})
