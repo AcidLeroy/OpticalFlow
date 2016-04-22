@@ -28,46 +28,35 @@ cv::UMat OverlapAdd(const cv::UMat &x_n, const cv::UMat &h_n, size_t L) {
   auto top_pad = h_n.rows - 1;
   auto right_pad = h_n.cols - 1;
 
-  cv::UMat y =
-      cv::UMat::zeros(m_kernel_row + nx_row, m_kernel_col + nx_col, CV_32F);
+  cv::UMat y = cv::UMat::zeros(m_kernel_row + nx_row - 1,
+                               m_kernel_col + nx_col - 1, CV_32F);
 
   for (size_t i_row = 0; i_row < nx_row; i_row += L) {
     auto il_row = (i_row + L - 1 < nx_row) ? i_row + L - 1 : nx_row;
     auto height = il_row - i_row;
     for (size_t i_col = 0; i_col < nx_col; i_col += L) {
       auto il_col = (i_col + L - 1 < nx_col) ? i_col + L - 1 : nx_col;
-      std::cout << "region is: " << i_col << " " << i_row << " " << il_col
-                << " " << il_row << std::endl;
+
       auto width = il_col - i_col;
 
       cv::UMat sub = cv::UMat::zeros(height + 1 + 2 * top_pad,
                                      width + 1 + 2 * right_pad, CV_32F);
       x_n(cv::Rect(i_col, i_row, width + 1, height + 1))
           .copyTo(sub(cv::Rect(right_pad, top_pad, width + 1, height + 1)));
-      std::cout << "sub is " << sub.rows << " " << sub.cols << std::endl;
-      std::cout << "n_row = " << n_row << " n_col = " << n_col << std::endl;
 
       cv::UMat yt;
-      std::cout << "sub = " << std::endl << sub.getMat(cv::ACCESS_RW)
-                << std::endl;
 
-      std::cout << "template = " << std::endl << h_n.getMat(cv::ACCESS_RW)
-                << std::endl;
       cv::matchTemplate(sub, h_n, yt, CV_TM_CCORR);
 
-      std::cout << "yt = " << std::endl << yt.getMat(cv::ACCESS_READ)
-                << std::endl;
-      auto k_row = std::min((i_row + n_row - 1),
-                            static_cast<size_t>(m_kernel_row + nx_row - 1));
-      auto k_col = std::min((i_col + n_col - 1),
-                            static_cast<size_t>(m_kernel_col + nx_col - 1));
+      auto k_row = std::min(n_row, static_cast<size_t>(i_row - y.rows));
+      auto k_col = std::min(n_col, static_cast<size_t>(i_col - y.cols));
+
       // Overlap and add blocks
-      cv::add(y(cv::Rect(i_col, i_row, k_col, k_row)),
-              yt(cv::Rect(0, 0, k_col - i_col + 1, k_row - i_row + 1)),
-              y(cv::Rect(i_col, i_row, k_col, k_row)));
+      cv::UMat y_region = y(cv::Rect(i_col, i_row, k_col, k_row));
+      cv::UMat yt_region = yt(cv::Rect(0, 0, k_col, k_row));
+      cv::add(y_region, yt_region, y_region);
     }
   }
-
   return y;
 }
 cv::UMat Dft2(const cv::UMat &x_n, const cv::UMat &h_n) {
@@ -109,7 +98,6 @@ cv::UMat ZeroPad(const cv::UMat &block, int num_rows, int num_cols) {
   assert(num_rows >= block.rows);
   int bottom = num_rows - block.rows;
   cv::UMat padded;
-  std::cout << "bottom " << bottom << " right " << right << std::endl;
   copyMakeBorder(block, padded, 0, bottom, 0, right, cv::BORDER_CONSTANT,
                  cv::Scalar(0));
   return padded;

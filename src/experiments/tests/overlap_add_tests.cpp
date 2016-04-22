@@ -173,8 +173,21 @@ TEST(OverlapAdd, OverlapAdd) {
   cv::UMat x = GetU16x16();
   size_t L = 4;  // break image into 4x4 blocks
   cv::UMat h = cv::UMat::ones(3, 3, CV_32F);
-  // cv::randu(h, 0, 255);
-  OverlapAdd(x, h, L);
+  cv::UMat actual_result = OverlapAdd(x, h, L);
+  cv::Mat actual = actual_result.getMat(cv::ACCESS_RW);
+
+  auto top_pad = h.rows - 1;
+  auto bottom_pad = h.rows - 1;
+  auto right_pad = h.cols - 1;
+  auto left_pad = h.cols - 1;
+  cv::copyMakeBorder(x, x, top_pad, bottom_pad, left_pad, right_pad,
+                     cv::BORDER_CONSTANT, cv::Scalar(0));
+  cv::UMat expected_result;
+  cv::matchTemplate(x, h, expected_result, CV_TM_CCORR);
+  cv::Mat expected = expected_result.getMat(cv::ACCESS_RW);
+  for (size_t i = 0; i < expected.total(); ++i) {
+    ASSERT_FLOAT_EQ(expected.at<float>(i), actual.at<float>(i));
+  }
 }
 
 TEST(OverlapAdd, DISABLED_TestSum) {
@@ -226,7 +239,7 @@ TEST(OverlapAdd, DISABLED_TestSum) {
             << actual_combined.getMat(cv::ACCESS_RW) << std::endl;
 }
 
-TEST(SubdivideImage, NoOp) {
+TEST(SubdivideImage, DISABLED_NoOp) {
   cv::Mat a = Get4x4();
   size_t num_rows = 4;
   size_t num_cols = 4;
@@ -244,8 +257,6 @@ TEST(RandomThought, DoesThisWork) {
   // m.copyTo(*ptr);
 
   cv::UMat* ptr = new cv::UMat(m.getUMat(cv::ACCESS_READ));
-
-  std::cout << "ptr = " << std::endl << ptr->getMat(cv::ACCESS_RW) << std::endl;
 }
 
 }  // end namepsace oflow
