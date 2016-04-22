@@ -9,15 +9,66 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 
-namespace oflow {
-cv::UMat OverlapAdd(const cv::UMat &x_n, const cv::UMat &h_n, size_t L) {
-  auto N = h_n.rows + L - 1;  // This should be nearest power of 2
-  auto ncol = x_n.cols;
-  auto nrow = x_n.rows;
-  cv::UMat h_padded = ZeroPad(h_n, N, N);
-  cv::UMat H = Dft(h_n);
+#include <algorithm>
 
-  return x_n;
+#include <iostream>
+namespace oflow {
+
+cv::UMat OverlapAdd(const cv::UMat &x_n, const cv::UMat &h_n, size_t L) {
+  // N
+  auto n_row = h_n.rows + L - 1;  // This should be nearest power of 2
+  auto n_col = h_n.cols + L - 1;
+
+  auto nx_col = x_n.cols;
+  auto nx_row = x_n.rows;
+  // M
+  auto m_kernel_row = h_n.rows;
+  auto m_kernel_col = h_n.cols;
+  // Left and Bottom pads will be the same value as right and top.
+  auto top_pad = h_n.rows - 1;
+  auto right_pad = h_n.cols - 1;
+
+  cv::UMat y =
+      cv::UMat::zeros(m_kernel_row + nx_row, m_kernel_col + nx_col, CV_32F);
+
+  for (size_t i_row = 0; i_row < nx_row; i_row += L) {
+    auto il_row = (i_row + L - 1 < nx_row) ? i_row + L - 1 : nx_row;
+    auto height = il_row - i_row;
+    for (size_t i_col = 0; i_col < nx_col; i_col += L) {
+      auto il_col = (i_col + L - 1 < nx_col) ? i_col + L - 1 : nx_col;
+      std::cout << "region is: " << i_col << " " << i_row << " " << il_col
+                << " " << il_row << std::endl;
+      auto width = il_col - i_col;
+
+      cv::UMat sub = cv::UMat::zeros(height + 1 + 2 * top_pad,
+                                     width + 1 + 2 * right_pad, CV_32F);
+      x_n(cv::Rect(i_col, i_row, width + 1, height + 1))
+          .copyTo(sub(cv::Rect(right_pad, top_pad, width + 1, height + 1)));
+      std::cout << "sub is " << sub.rows << " " << sub.cols << std::endl;
+      std::cout << "n_row = " << n_row << " n_col = " << n_col << std::endl;
+
+      cv::UMat yt;
+      std::cout << "sub = " << std::endl << sub.getMat(cv::ACCESS_RW)
+                << std::endl;
+
+      std::cout << "template = " << std::endl << h_n.getMat(cv::ACCESS_RW)
+                << std::endl;
+      cv::matchTemplate(sub, h_n, yt, CV_TM_CCORR);
+
+      std::cout << "yt = " << std::endl << yt.getMat(cv::ACCESS_READ)
+                << std::endl;
+      auto k_row = std::min((i_row + n_row - 1),
+                            static_cast<size_t>(m_kernel_row + nx_row - 1));
+      auto k_col = std::min((i_col + n_col - 1),
+                            static_cast<size_t>(m_kernel_col + nx_col - 1));
+      // Overlap and add blocks
+      cv::add(y(cv::Rect(i_col, i_row, k_col, k_row)),
+              yt(cv::Rect(0, 0, k_col - i_col + 1, k_row - i_row + 1)),
+              y(cv::Rect(i_col, i_row, k_col, k_row)));
+    }
+  }
+
+  return y;
 }
 cv::UMat Dft2(const cv::UMat &x_n, const cv::UMat &h_n) {
   cv::UMat x_dft = Dft(x_n);
@@ -58,8 +109,10 @@ cv::UMat ZeroPad(const cv::UMat &block, int num_rows, int num_cols) {
   assert(num_rows >= block.rows);
   int bottom = num_rows - block.rows;
   cv::UMat padded;
+  std::cout << "bottom " << bottom << " right " << right << std::endl;
   copyMakeBorder(block, padded, 0, bottom, 0, right, cv::BORDER_CONSTANT,
                  cv::Scalar(0));
   return padded;
 }
+
 }  // end namespace oflow

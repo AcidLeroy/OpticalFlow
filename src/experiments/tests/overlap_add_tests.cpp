@@ -153,4 +153,99 @@ TEST(OverlapAdd, GetSubregion) {
   ASSERT_FLOAT_EQ(expected_val, a.at<float>(0));
 }
 
+cv::Mat Get4x4() {
+  cv::Mat a(4, 4, CV_32F);
+  for (size_t i = 0; i < a.total(); ++i) {
+    a.at<float>(i) = i;
+  }
+  return a;
+}
+
+cv::UMat GetU16x16() {
+  cv::Mat a(16, 16, CV_32F);
+  for (size_t i = 0; i < a.total(); ++i) {
+    a.at<float>(i) = i;
+  }
+  return a.getUMat(cv::ACCESS_RW);
+}
+
+TEST(OverlapAdd, OverlapAdd) {
+  cv::UMat x = GetU16x16();
+  size_t L = 4;  // break image into 4x4 blocks
+  cv::UMat h = cv::UMat::ones(3, 3, CV_32F);
+  // cv::randu(h, 0, 255);
+  OverlapAdd(x, h, L);
+}
+
+TEST(OverlapAdd, DISABLED_TestSum) {
+  cv::UMat full_x = GetU16x16();
+  cv::UMat sub_x;
+  full_x(cv::Rect(0, 0, 8, 4)).copyTo(sub_x);
+  std::cout << "sub_x is " << std::endl << sub_x.getMat(cv::ACCESS_RW)
+            << std::endl;
+  cv::UMat h = cv::UMat::ones(3, 3, CV_32F);
+  cv::UMat sub1_x, sub2_x;
+  sub_x(cv::Rect(0, 0, 4, 4)).copyTo(sub1_x);
+  sub_x(cv::Rect(4, 0, 4, 4)).copyTo(sub2_x);
+  std::cout << "sub1_x = " << std::endl << sub1_x.getMat(cv::ACCESS_RW)
+            << std::endl;
+  std::cout << "sub2_x = " << std::endl << sub2_x.getMat(cv::ACCESS_RW)
+            << std::endl;
+  auto top_pad = h.rows - 1;
+  auto bottom_pad = h.rows - 1;
+  auto right_pad = h.cols - 1;
+  auto left_pad = h.cols - 1;
+  cv::copyMakeBorder(sub1_x, sub1_x, top_pad, bottom_pad, left_pad, right_pad,
+                     cv::BORDER_CONSTANT, cv::Scalar(0));
+  cv::copyMakeBorder(sub2_x, sub2_x, top_pad, bottom_pad, left_pad, right_pad,
+                     cv::BORDER_CONSTANT, cv::Scalar(0));
+  cv::copyMakeBorder(sub_x, sub_x, top_pad, bottom_pad, left_pad, right_pad,
+                     cv::BORDER_CONSTANT, cv::Scalar(0));
+  std::cout << "sub1_x = " << std::endl << sub1_x.getMat(cv::ACCESS_RW)
+            << std::endl;
+  std::cout << "sub2_x = " << std::endl << sub2_x.getMat(cv::ACCESS_RW)
+            << std::endl;
+  cv::UMat expected_result;
+  cv::matchTemplate(sub_x, h, expected_result, CV_TM_CCORR);
+  std::cout << "expected_result_x = " << std::endl
+            << expected_result.getMat(cv::ACCESS_RW) << std::endl;
+
+  cv::UMat actual1, actual2;
+  cv::UMat actual_combined = cv::UMat::zeros(expected_result.size(), CV_32F);
+  cv::matchTemplate(sub1_x, h, actual1, CV_TM_CCORR);
+  cv::matchTemplate(sub2_x, h, actual2, CV_TM_CCORR);
+  std::cout << "actual1 = " << std::endl << actual1.getMat(cv::ACCESS_RW)
+            << std::endl;
+  std::cout << "actual2 = " << std::endl << actual2.getMat(cv::ACCESS_RW)
+            << std::endl;
+  cv::add(actual_combined(cv::Rect(0, 0, 6, 6)), actual1(cv::Rect(0, 0, 6, 6)),
+          actual_combined(cv::Rect(0, 0, 6, 6)));
+  cv::add(actual_combined(cv::Rect(4, 0, 6, 6)), actual2(cv::Rect(0, 0, 6, 6)),
+          actual_combined(cv::Rect(4, 0, 6, 6)));
+  std::cout << "actual_combined = " << std::endl
+            << actual_combined.getMat(cv::ACCESS_RW) << std::endl;
+}
+
+TEST(SubdivideImage, NoOp) {
+  cv::Mat a = Get4x4();
+  size_t num_rows = 4;
+  size_t num_cols = 4;
+  auto subimage = SubdivideImage<cv::Mat>(a, num_rows, num_cols);
+  ASSERT_EQ(1, subimage.size());
+  bool eq = cv::countNonZero(a != subimage[0]) == 0;
+  ASSERT_TRUE(eq);
+}
+
+TEST(RandomThought, DoesThisWork) {
+  cv::Mat m = cv::Mat::zeros(4, 4, CV_32F);
+  // cv::UMat* ptr;  //= new cv::UMat(m.rows, m.cols, m.type());
+  // dont ask me why the hell we are using a pointer to the smart mat object (my
+  // project leader insists)
+  // m.copyTo(*ptr);
+
+  cv::UMat* ptr = new cv::UMat(m.getUMat(cv::ACCESS_READ));
+
+  std::cout << "ptr = " << std::endl << ptr->getMat(cv::ACCESS_RW) << std::endl;
+}
+
 }  // end namepsace oflow

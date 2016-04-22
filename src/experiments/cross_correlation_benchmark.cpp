@@ -10,6 +10,7 @@
 #include <random>
 #include <memory>
 #include <iostream>
+#include "overlap_add.h"
 
 CELERO_MAIN
 
@@ -20,10 +21,12 @@ class CrossCorrelationFixture : public ::celero::TestFixture {
       const override {
     // std::cout << "Calling getExperimentalValues" << std::endl;
     return std::vector<std::pair<int64_t, uint64_t>>{
-        std::make_pair(64, 0),   std::make_pair(128, 0),
-        std::make_pair(256, 0),  std::make_pair(512, 0),
-        std::make_pair(1024, 0), std::make_pair(2048, 0),
-        std::make_pair(4096, 0)};
+        //        std::make_pair(64, 0),   std::make_pair(128, 0),
+        //        std::make_pair(256, 0),
+        std::make_pair(512, 0),  std::make_pair(1024, 0),
+        std::make_pair(2048, 0), std::make_pair(4096, 0),
+        std::make_pair(8192, 0), std::make_pair(16384, 0),
+    };
   }
   /// Before each run, build a vector of random integers.
   virtual void setUp(int64_t experimentValue) override {
@@ -58,21 +61,48 @@ class CrossCorrelationFixture : public ::celero::TestFixture {
   std::shared_ptr<cv::UMat> frame_gpu, template_gpu;
 
   // template_size x template_size
-  const int template_size = 8;
+  const int template_size = 17;
 };
 
-const static int number_of_operations = 100;
-const static int number_of_samples = 5;
+const static int number_of_operations = 10;
+const static int number_of_samples = 2;
 
-BASELINE_F(CrossCorrelationBenchmark, NoGpuSupport, CrossCorrelationFixture,
+// BASELINE_F(CrossCorrelationBenchmark, NoGpuSupport, CrossCorrelationFixture,
+//           number_of_samples, number_of_operations) {
+//  cv::Mat result;
+//  cv::matchTemplate(*frame_no_gpu, *template_no_gpu, result, CV_TM_CCORR);
+//}
+
+BASELINE_F(CrossCorrelationBenchmark, GpuSupport, CrossCorrelationFixture,
            number_of_samples, number_of_operations) {
-  cv::Mat result;
-  cv::matchTemplate(*frame_no_gpu, *template_no_gpu, result, CV_TM_CCORR);
-}
-
-BENCHMARK_F(CrossCorrelationBenchmark, GpuSupport, CrossCorrelationFixture,
-            number_of_samples, number_of_operations) {
   cv::UMat result;
   cv::matchTemplate(*frame_gpu, *template_gpu, result, CV_TM_CCORR);
 }
+
+constexpr int L = 512;
+
+BENCHMARK_F(CrossCorrelationBenchmark, OverlapAdd, CrossCorrelationFixture,
+            number_of_samples, number_of_operations) {
+  if (frame_gpu->rows > L) {
+    int num_iters =
+        (frame_gpu->rows / L) * (frame_gpu->rows / L);  // Assume rows == cols
+    cv::UMat result;
+    for (size_t i = 0; i < num_iters; ++i) {
+      cv::UMat sub_region = (*frame_gpu)(cv::Rect(0, 0, 511, 511));
+      cv::matchTemplate(sub_region, *template_gpu, result, CV_TM_CCORR);
+    }
+  } else {
+    cv::UMat result;
+    cv::matchTemplate(*frame_gpu, *template_gpu, result, CV_TM_CCORR);
+  }
+}
+
+// BENCHMARK_F(CrossCorrelationBenchmark, NoGpuDftIdft, CrossCorrelationFixture,
+//            number_of_samples, number_of_operations) {
+//  cv::UMat t = Dft(*template_gpu);
+//  cv::UMat x = Dft(*frame_gpu);
+//  cv::Mat combo = x.getMat(cv::ACCESS_RW).mul(t.getMat(cv::ACCESS_RW));
+//  cv::UMat reslt = Idft(combo.getUMat(cv::ACCESS_RW));
+//}
+
 }  // end namespace oflow
