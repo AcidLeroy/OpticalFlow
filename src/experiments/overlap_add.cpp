@@ -29,7 +29,7 @@ cv::UMat OverlapAdd(const cv::UMat &x_n, const cv::UMat &h_n, size_t L) {
   auto right_pad = h_n.cols - 1;
 
   cv::UMat y = cv::UMat::zeros(m_kernel_row + nx_row - 1,
-                               m_kernel_col + nx_col - 1, CV_32F);
+                               m_kernel_col + nx_col - 1, x_n.type());
 
   for (size_t i_row = 0; i_row < nx_row; i_row += L) {
     auto il_row = (i_row + L - 1 < nx_row) ? i_row + L - 1 : nx_row;
@@ -40,7 +40,7 @@ cv::UMat OverlapAdd(const cv::UMat &x_n, const cv::UMat &h_n, size_t L) {
       auto width = il_col - i_col;
 
       cv::UMat sub = cv::UMat::zeros(height + 1 + 2 * top_pad,
-                                     width + 1 + 2 * right_pad, CV_32F);
+                                     width + 1 + 2 * right_pad, x_n.type());
       x_n(cv::Rect(i_col, i_row, width + 1, height + 1))
           .copyTo(sub(cv::Rect(right_pad, top_pad, width + 1, height + 1)));
 

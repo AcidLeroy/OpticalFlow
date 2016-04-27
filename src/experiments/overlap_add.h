@@ -46,7 +46,7 @@ void convolveDFT(mat_type &A, mat_type &B, mat_type &C) {
   dftSize.height = cv::getOptimalDFTSize(A.rows + B.rows - 1);
   // allocate temporary buffers and initialize them with 0's
   mat_type tempA(dftSize, A.type(), cv::Scalar::all(0));
-  mat_type tempB(dftSize, B.type(), cv:: Scalar::all(0));
+  mat_type tempB(dftSize, B.type(), cv::Scalar::all(0));
   // copy A and B to the top-left corners of tempA and tempB, respectively
   mat_type roiA(tempA, Rect(0, 0, A.cols, A.rows));
   A.copyTo(roiA);
