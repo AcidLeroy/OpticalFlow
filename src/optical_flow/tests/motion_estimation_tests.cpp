@@ -153,14 +153,60 @@ TEST(OpenCvStuff, OrientationOfConnectedComponents) {
   }
 }
 
-void UpdateStats(const cv::Mat &thresholded_image,
-                 std::vector<double> *orientations,
-                 std::vector<cv::Mat> *centroids) {}
+TEST(OpenCvStuff, AppendRow) {
+  std::vector<uint16_t> my_data{{1, 2, 3, 4}};
+  std::vector<uint16_t> data_to_append{{5, 6, 7, 8}};
+  cv::Mat original_mat = cv::Mat(my_data);
+  original_mat = original_mat.reshape(1, 2);
+  cv::Mat mat_to_append = cv::Mat(data_to_append);
+  mat_to_append = mat_to_append.reshape(1, 2);
+  std::cout << "Original_mat " << std::endl << original_mat << std::endl;
+  cv::Mat new_mat;
+  cv::vconcat(original_mat, mat_to_append, new_mat);
+  std::cout << "New mat = " << std::endl << new_mat << std::endl;
+}
 
-TEST(OpenCvStuff, TestUpdateStats) {
+void UpdateCentroidAndOrientation(const cv::Mat &thresholded_image,
+                                  std::vector<double> *orientations,
+                                  cv::Mat *centroids) {
+  cv::Mat labels, stats, current_centroids;
+  cv::connectedComponentsWithStats(thresholded_image, labels, stats,
+                                   current_centroids);
+  // Don't care about background centroid, hence the range.
+  if (centroids->empty()) {
+    current_centroids(cv::Range(1, current_centroids.rows),
+                      cv::Range(0, current_centroids.cols)).copyTo(*centroids);
+  } else {
+    cv::vconcat(*centroids,
+                current_centroids(cv::Range(1, current_centroids.rows),
+                                  cv::Range(0, current_centroids.cols)),
+                *centroids);
+  }
+  std::vector<std::vector<cv::Point>> contours;
+  cv::findContours(thresholded_image, contours, cv::RETR_LIST,
+                   cv::CHAIN_APPROX_NONE);
+  for (int i = 0; i < contours.size(); ++i) {
+    // Can only fit an ellipse with 5 points, skip others
+    if (contours[i].size() >= 5) {
+      cv::RotatedRect result = cv::fitEllipse(contours[i]);
+      orientations->push_back(result.angle);
+    }
+  }
+}
+
+TEST(OpenCvStuff, TestUpdateCentroidAndOrientation) {
   // Need to store centroids and orientations for each optical flow frame
-  cv::Mat labels, stats, centroids;
   cv::Mat img = cv::Mat(data2);
+  // assume that img is already been thresholded.
+  img = img.reshape(1, 8);
+  img = img.t();
+  std::vector<double> orientations;
+  cv::Mat centroids;
+  UpdateCentroidAndOrientation(img, &orientations, &centroids);
+  UpdateCentroidAndOrientation(img, &orientations, &centroids);
+  UpdateCentroidAndOrientation(img, &orientations, &centroids);
+  ASSERT_EQ(3, orientations.size());
+  ASSERT_EQ(3, centroids.rows);
 }
 
 }  // end namepsace oflow

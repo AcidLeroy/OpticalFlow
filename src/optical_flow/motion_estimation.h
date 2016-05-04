@@ -70,6 +70,8 @@ class MotionEstimation {
     return result;
   }
 
+
+
   template <typename T = float>
   cv::Mat PointsToMat(int num_rows, int num_cols,
                       const std::vector<T>& intensities,
