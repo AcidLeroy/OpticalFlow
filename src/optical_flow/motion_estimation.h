@@ -13,6 +13,8 @@
 #include <algorithm>
 #include "optical_flow.h"
 
+#include <iostream>
+
 namespace oflow {
 
 class MotionEstimationException : public std::runtime_error {
@@ -44,6 +46,7 @@ class MotionEstimation {
       auto thresh_bin_image =
           PointsToMat(stats.GetNumRows(), stats.GetNumRows(), thresh_mag,
                       stats.GetPoints());
+
       std::swap(current_frame, next_frame);
       next_frame = reader_->ReadFrame();
       if (next_frame == nullptr) break;
@@ -80,6 +83,10 @@ class MotionEstimation {
 
  private:
   std::shared_ptr<ReaderType> reader_;
+  // Centroids for each optical flow frame
+  std::vector<cv::Mat> centroids_;
+  // orientations for each optical flow frame
+  std::vector<float> orientations_;
 };
 
 } /* namespace oflow */

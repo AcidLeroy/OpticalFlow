@@ -70,12 +70,14 @@ TEST(MotionEstimation, ReadTwoImages) {
       .WillOnce(Return(frame2))
       .WillOnce(Return(nullptr));
 
-  std::shared_ptr<MockFlow> mock_flow{new MockFlow()};
+  std::shared_ptr<LKFlow<cv::Mat>> flow;
+  flow.reset(new LKFlow<cv::Mat>());
 
-  EXPECT_CALL(*mock_flow, CalculateVectors(_, _))
-      .WillOnce(Return(OpticalFlow<>()));
-
-  me.EstimateMotion<MockFlow>(mock_flow);
+  // WTF was I thinking when I wrote this??
+  //  EXPECT_CALL(*mock_flow, CalculateVectors(_, _))
+  //      .WillOnce(Return(OpticalFlow<>()));
+  //
+  me.EstimateMotion<LKFlow<cv::Mat>>(flow);
 }
 
 TEST(MotionEstimation, ThresholdFlowStats) {
@@ -100,6 +102,65 @@ TEST(MotionEstimation, PointsToMat) {
   ASSERT_EQ(magnitudes[0], test_array.at<uchar>(0, 0));
   ASSERT_EQ(magnitudes[1], test_array.at<uchar>(1, 1));
   ASSERT_EQ(magnitudes[2], test_array.at<uchar>(2, 2));
+}
+
+std::vector<uint8_t> data{{1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1,
+                           1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1,
+                           1, 1, 0, 0, 0, 0, 1, 1, 1, 1}};
+
+TEST(OpenCvStuff, ConnectedComponents) {
+  cv::Mat labels, stats, centroids;
+
+  cv::Mat img = cv::Mat(data);
+  img = img.reshape(1, 8);
+  int nccomps = cv::connectedComponentsWithStats(img, labels, stats, centroids);
+  ASSERT_EQ(3, nccomps);  // label 0 is reserved for background label, hence 3
+                          // connected components
+}
+
+std::vector<uint8_t> data2{{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                            0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1,
+                            1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+
+TEST(OpenCvStuff, OrientationOfConnectedComponents) {
+  cv::Mat labels, stats, centroids;
+  cv::Mat img = cv::Mat(data2);
+  img = img.reshape(1, 8);
+  img = img.t();
+  std::cout << "img = " << std::endl << img << std::endl;
+  int nccomps = cv::connectedComponentsWithStats(img, labels, stats, centroids);
+  std::cout << "centroids = " << std::endl << centroids << std::endl;
+  // Get labels for 2
+  cv::Mat label2 = cv::Mat::zeros(labels.rows, labels.cols, CV_8U);
+  for (int row = 0; row < labels.rows; ++row) {
+    for (int col = 0; col < labels.cols; ++col) {
+      if (labels.at<int>(row, col) == 2) {
+        label2.at<uchar>(row, col) = 123;
+      }
+    }
+  }
+  std::vector<std::vector<cv::Point>> contours;
+
+  cv::findContours(img, contours, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
+  std::cout << "label2 = " << std::endl << label2 << std::endl;
+  for (int i = 0; i < contours.size(); ++i) {
+    std::cout << "The size is: " << contours[i].size() << std::endl;
+    std::cout << "contours = " << std::endl << contours[i] << std::endl;
+    cv::RotatedRect result = cv::fitEllipse(contours[i]);
+    std::cout << "angle = " << result.angle << std::endl;
+  }
+}
+
+void UpdateStats(const cv::Mat &thresholded_image,
+                 std::vector<double> *orientations,
+                 std::vector<cv::Mat> *centroids) {}
+
+TEST(OpenCvStuff, TestUpdateStats) {
+  // Need to store centroids and orientations for each optical flow frame
+  cv::Mat labels, stats, centroids;
+  cv::Mat img = cv::Mat(data2);
 }
 
 }  // end namepsace oflow

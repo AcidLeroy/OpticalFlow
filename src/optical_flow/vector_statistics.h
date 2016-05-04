@@ -46,6 +46,7 @@ class VectorStatistics {
   std::vector<T> VelocityY() {
     std::vector<T> velocity;
     velocity.reserve(points_[0].size());
+
     for (size_t i = 0; i < points_[0].size(); ++i) {
       velocity.push_back(points_[0][i].y - points_[1][i].y);
     }

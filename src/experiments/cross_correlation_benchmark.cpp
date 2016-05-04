@@ -19,7 +19,6 @@ class CrossCorrelationFixture : public ::celero::TestFixture {
  public:
   virtual std::vector<std::pair<int64_t, uint64_t>> getExperimentValues()
       const override {
-    // std::cout << "Calling getExperimentalValues" << std::endl;
     return std::vector<std::pair<int64_t, uint64_t>>{
         //        std::make_pair(64, 0),   std::make_pair(128, 0),
         //        std::make_pair(256, 0),
@@ -27,7 +26,6 @@ class CrossCorrelationFixture : public ::celero::TestFixture {
         std::make_pair(2048, 0), std::make_pair(4096, 0),
         std::make_pair(8192, 0),
         //        		std::make_pair(16384, 0),
-        //        std::make_pair(32768, 0)
     };
   }
   /// Before each run, build a vector of random integers.
@@ -109,12 +107,5 @@ BENCHMARK_F(CrossCorrelationBenchmark, OverlapAdd, CrossCorrelationFixture,
     cv::matchTemplate(*frame_gpu, *template_gpu, result, CV_TM_CCORR);
   }
 }
-// BENCHMARK_F(CrossCorrelationBenchmark, NoGpuDftIdft, CrossCorrelationFixture,
-//            number_of_samples, number_of_operations) {
-//  cv::UMat t = Dft(*template_gpu);
-//  cv::UMat x = Dft(*frame_gpu);
-//  cv::Mat combo = x.getMat(cv::ACCESS_RW).mul(t.getMat(cv::ACCESS_RW));
-//  cv::UMat reslt = Idft(combo.getUMat(cv::ACCESS_RW));
-//}
 
 }  // end namespace oflow
