@@ -130,7 +130,7 @@ TEST(OpenCvStuff, OrientationOfConnectedComponents) {
   img = img.reshape(1, 8);
   img = img.t();
   std::cout << "img = " << std::endl << img << std::endl;
-  int nccomps = cv::connectedComponentsWithStats(img, labels, stats, centroids);
+  cv::connectedComponentsWithStats(img, labels, stats, centroids);
   std::cout << "centroids = " << std::endl << centroids << std::endl;
   // Get labels for 2
   cv::Mat label2 = cv::Mat::zeros(labels.rows, labels.cols, CV_8U);
@@ -166,38 +166,12 @@ TEST(OpenCvStuff, AppendRow) {
   std::cout << "New mat = " << std::endl << new_mat << std::endl;
 }
 
-void UpdateCentroidAndOrientation(const cv::Mat &thresholded_image,
-                                  std::vector<double> *orientations,
-                                  cv::Mat *centroids) {
-  cv::Mat labels, stats, current_centroids;
-  cv::connectedComponentsWithStats(thresholded_image, labels, stats,
-                                   current_centroids);
-  // Don't care about background centroid, hence the range.
-  if (centroids->empty()) {
-    current_centroids(cv::Range(1, current_centroids.rows),
-                      cv::Range(0, current_centroids.cols)).copyTo(*centroids);
-  } else {
-    cv::vconcat(*centroids,
-                current_centroids(cv::Range(1, current_centroids.rows),
-                                  cv::Range(0, current_centroids.cols)),
-                *centroids);
-  }
-  std::vector<std::vector<cv::Point>> contours;
-  cv::findContours(thresholded_image, contours, cv::RETR_LIST,
-                   cv::CHAIN_APPROX_NONE);
-  for (int i = 0; i < contours.size(); ++i) {
-    // Can only fit an ellipse with 5 points, skip others
-    if (contours[i].size() >= 5) {
-      cv::RotatedRect result = cv::fitEllipse(contours[i]);
-      orientations->push_back(result.angle);
-    }
-  }
-}
+namespace stats {
 
-TEST(OpenCvStuff, TestUpdateCentroidAndOrientation) {
+TEST(OflowStats, TestUpdateCentroidAndOrientation) {
   // Need to store centroids and orientations for each optical flow frame
   cv::Mat img = cv::Mat(data2);
-  // assume that img is already been thresholded.
+  // assume that img has already been thresholded.
   img = img.reshape(1, 8);
   img = img.t();
   std::vector<double> orientations;
@@ -208,5 +182,63 @@ TEST(OpenCvStuff, TestUpdateCentroidAndOrientation) {
   ASSERT_EQ(3, orientations.size());
   ASSERT_EQ(3, centroids.rows);
 }
+
+TEST(OflowStats, TestGetLogicalVector) {
+  std::vector<uint8_t> logical_data{{1, 0, 0, 1}};
+  cv::Mat_<uint8_t> logical_mat = cv::Mat_<uint8_t>(2, 2, &logical_data[0]);
+  std::cout << "logical mat " << std::endl << logical_mat << std::endl;
+
+  std::vector<double> intensity_data{{1, 2, 3, 4}};
+  cv::Mat_<double> intensity_mat = cv::Mat_<double>(2, 2, &intensity_data[0]);
+  std::cout << "intensity Mat " << std::endl << intensity_mat << std::endl;
+  cv::Mat expected_output = (cv::Mat_<double>(2, 2) << 1, 0, 0, 4);
+  std::cout << "expected output " << std::endl << expected_output << std::endl;
+  cv::Mat actual_output = GetLogicalVector(intensity_mat, logical_mat);
+  ASSERT_EQ(expected_output.total(), actual_output.total());
+  for (size_t i = 0; i < expected_output.total(); ++i) {
+    ASSERT_DOUBLE_EQ(actual_output.at<double>(i),
+                     expected_output.at<double>(i));
+  }
+}
+TEST(OflowStats, TestGetHistoAround) {
+  std::vector<uint8_t> data3{{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1,
+                              1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+  cv::Mat thresholded_motion = cv::Mat(data3);
+  thresholded_motion = thresholded_motion.reshape(1, 8);
+  thresholded_motion = thresholded_motion.t();
+  int disk_size = 3;
+  cv::Mat gray_scale_image(thresholded_motion.rows, thresholded_motion.cols,
+                           thresholded_motion.type());
+  cv::randu(gray_scale_image, 0, 256);
+  cv::Mat bg_histogram;
+  GetHistoAround(thresholded_motion, disk_size, gray_scale_image,
+                 &bg_histogram);
+  GetHistoAround(thresholded_motion, disk_size, gray_scale_image,
+                 &bg_histogram);
+  GetHistoAround(thresholded_motion, disk_size, gray_scale_image,
+                 &bg_histogram);
+  std::cout << "histogram = " << std::endl << bg_histogram << std::endl;
+}
+
+TEST(OflowStats, TestUpdateHistogram) {
+  std::vector<uint8_t> data3{{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1,
+                              1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+  cv::Mat thresholded_motion = cv::Mat(data3);
+  thresholded_motion = thresholded_motion.reshape(1, 8);
+  thresholded_motion = thresholded_motion.t();
+  cv::Mat motion_mags(thresholded_motion.rows, thresholded_motion.cols, CV_32F);
+  cv::randu(motion_mags, 0, .2);
+  cv::Mat histogram;
+  int num_bins = 25;
+  const float range[2] = {0, 0.2};
+  UpdateHistogram(thresholded_motion, motion_mags, &histogram, range, num_bins);
+  std::cout << "histogram = " << std::endl << histogram << std::endl;
+}
+
+}  // end namespace stats
 
 }  // end namepsace oflow

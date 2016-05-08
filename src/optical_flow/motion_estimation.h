@@ -12,7 +12,8 @@
 #include <vector>
 #include <algorithm>
 #include "optical_flow.h"
-
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include <iostream>
 
 namespace oflow {
@@ -24,6 +25,95 @@ class MotionEstimationException : public std::runtime_error {
   explicit MotionEstimationException(const char* what_arg)
       : runtime_error(what_arg) {}
 };
+
+namespace stats {
+/**
+ * Get the histogram for the image around the motion.
+ */
+void GetHistoAround(const cv::Mat_<uint8_t>& thresholded_motion, int disk_size,
+                    cv::Mat& gray_scale_image, cv::Mat* bg_histogram) {
+  cv::Mat dialated;
+  // Get disk
+  cv::Mat disk = cv::getStructuringElement(cv::MORPH_ELLIPSE,
+                                           cv::Size(disk_size, disk_size));
+  // Dilate motion to get pixels around motion
+  cv::dilate(thresholded_motion, dialated, disk);
+  cv::Mat diff_image = dialated - thresholded_motion;
+  cv::Mat background;
+  gray_scale_image.copyTo(background, diff_image);
+  // Get histogram of background intensity
+  constexpr int num_bins = 25;
+  constexpr float range[] = {0, 256};  // the upper boundary is exclusive
+  const float* hist_range = {range};
+  bool uniform = true;
+  bool accumulate = false;
+
+  cv::Mat hist;
+  cv::calcHist(&background, 1, 0, cv::Mat(), hist, 1, &num_bins, &hist_range,
+               uniform, accumulate);
+  if (bg_histogram->empty()) {
+    hist.copyTo(*bg_histogram);
+  } else {
+    (*bg_histogram) = (*bg_histogram) + hist;
+  }
+}
+
+void UpdateHistogram(const cv::Mat_<uint8_t>& thresholded_image,
+                     const cv::Mat& intensities, cv::Mat* histogram,
+                     const float range[2], int num_bins) {
+  // Get histogram of background intensity
+  const float* hist_range = {range};
+  bool uniform = true;
+  bool accumulate = false;
+  cv::Mat masked_image;
+  intensities.copyTo(masked_image, thresholded_image);
+
+  cv::Mat hist;
+  cv::calcHist(&masked_image, 1, 0, cv::Mat(), hist, 1, &num_bins, &hist_range,
+               uniform, accumulate);
+  if (histogram->empty()) {
+    hist.copyTo(*histogram);
+  } else {
+    (*histogram) = (*histogram) + hist;
+  }
+}
+
+cv::Mat GetLogicalVector(const cv::Mat& intensity_image,
+                         const cv::Mat_<uint8_t>& logical_image) {
+  cv::Mat valid_values;
+  intensity_image.copyTo(valid_values, logical_image);
+  return valid_values;
+}
+
+void UpdateCentroidAndOrientation(const cv::Mat& thresholded_image,
+                                  std::vector<double>* orientations,
+                                  cv::Mat* centroids) {
+  cv::Mat labels, stats, current_centroids;
+  cv::connectedComponentsWithStats(thresholded_image, labels, stats,
+                                   current_centroids);
+  // Don't care about background centroid, hence the range.
+  if (centroids->empty()) {
+    current_centroids(cv::Range(1, current_centroids.rows),
+                      cv::Range(0, current_centroids.cols)).copyTo(*centroids);
+  } else {
+    cv::vconcat(*centroids,
+                current_centroids(cv::Range(1, current_centroids.rows),
+                                  cv::Range(0, current_centroids.cols)),
+                *centroids);
+  }
+  std::vector<std::vector<cv::Point>> contours;
+  cv::findContours(thresholded_image, contours, cv::RETR_LIST,
+                   cv::CHAIN_APPROX_NONE);
+  for (int i = 0; i < contours.size(); ++i) {
+    // Can only fit an ellipse with 5 points, skip others
+    if (contours[i].size() >= 5) {
+      cv::RotatedRect result = cv::fitEllipse(contours[i]);
+      orientations->push_back(result.angle);
+    }
+  }
+}
+
+}  // End namespace stats
 
 template <typename ReaderType>
 class MotionEstimation {
@@ -53,6 +143,21 @@ class MotionEstimation {
     }
   }
 
+  void UpdateStats(const cv::Mat_<uint8_t>& binary_image,
+                   const cv::Mat& next_frame, const cv::Mat& magnitude,
+                   const cv::Mat& orientation) {
+    stats::UpdateCentroidAndOrientation(binary_image, &orientations_,
+                                        &centroids_);
+    constexpr int num_bins = 25;
+    stats::GetHistoAround(binary_image, num_bins, next_frame, &bg_histogram_);
+    // Update magnitude histogram
+    stats::UpdateHistogram(binary_image, magnitude, &magnitude_histogram_,
+                           {0, 0.2}, num_bins);
+    // Update orientation histogram
+    stats::UpdateHistogram(binary_image, orientation, &orientation_histogram_,
+                           {-M_PI, M_PI}, num_bins);
+  }
+
   template <typename T = double>
   std::vector<uint8_t> ThresholdVector(const std::vector<T>& points_to_thresh,
                                        double percent_of_max) const {
@@ -70,8 +175,6 @@ class MotionEstimation {
     return result;
   }
 
-
-
   template <typename T = float>
   cv::Mat PointsToMat(int num_rows, int num_cols,
                       const std::vector<T>& intensities,
@@ -86,9 +189,15 @@ class MotionEstimation {
  private:
   std::shared_ptr<ReaderType> reader_;
   // Centroids for each optical flow frame
-  std::vector<cv::Mat> centroids_;
+  cv::Mat centroids_;
   // orientations for each optical flow frame
-  std::vector<float> orientations_;
+  std::vector<double> orientations_;
+  // Background histogram
+  cv::Mat bg_histogram_;
+  // Histogram for orientations of motion vectors
+  cv::Mat orientation_histogram_;
+  // Histogram for magnitudes of motion vectors
+  cv::Mat magnitude_histogram_;
 };
 
 } /* namespace oflow */

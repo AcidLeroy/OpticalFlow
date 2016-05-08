@@ -61,6 +61,15 @@ class OpticalFlow {
   int num_cols_ = 0;
 };
 
+template <>
+class OpticalFlow<cv::Mat> {
+public:
+private:
+	 cv::Mat vx_;
+	 cv::Mat vy_;
+	 cv::Mat orientation_;
+	 cv::Mat magnitude_;
+};
 } /* namespace oflow */
 
 #endif /* SRC_OPTICAL_FLOW_OPTICAL_FLOW_H_ */

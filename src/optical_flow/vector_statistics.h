@@ -82,6 +82,65 @@ class VectorStatistics {
   const vector_type& points_;
 };
 
+template <>
+class VectorStatistics<cv::Mat> {
+ public:
+  explicit VectorStatistics(const vector_type& points, const cv::Mat& image)
+      : points_(points), num_rows_(image.rows), num_cols_(image.cols) {
+    if (points_[0].size() != points_[1].size()) {
+      throw VectorStatisticsException(std::string(
+          "points[0].size = " + std::to_string(points_[0].size()) +
+          " != points[1].size() = " + std::to_string(points_[1].size())));
+    }
+  };
+  cv::Mat VelocityX() {
+    cv::Mat velocity = cv::Mat::zeros(num_rows_, num_cols_, CV_32F);
+    for (size_t i = 0; i < points_[0].size(); ++i) {
+      velocity.at<float>(points_[0][i].y, points_[0][i].x) =
+          points_[0][i].x - points_[1][i].x;
+    }
+    return velocity;
+  }
+  cv::Mat VelocityY() {
+    cv::Mat velocity = cv::Mat::zeros(num_rows_, num_cols_, CV_32F);
+    for (size_t i = 0; i < points_[0].size(); ++i) {
+      velocity.at<float>(points_[0][i].y, points_[0][i].x) =
+          points_[0][i].y - points_[1][i].y;
+    }
+    return velocity;
+  }
+  cv::Mat Magnitude() {
+    cv::Mat mag = cv::Mat::zeros(num_rows_, num_cols_, CV_32F);
+    for (size_t i = 0; i < points_[0].size(); ++i) {
+      mag.at<float>(points_[0][i].y, points_[0][i].x) =
+          (std::sqrt((points_[0][i].x - points_[1][i].x) *
+                         (points_[0][i].x - points_[1][i].x) +
+                     (points_[0][i].y - points_[1][i].y) *
+                         (points_[0][i].y - points_[1][i].y)));
+    }
+    return mag;
+  }
+  cv::Mat Orientation() {
+    cv::Mat theta = cv::Mat::zeros(num_rows_, num_cols_, CV_32F);
+    for (size_t i = 0; i < points_[0].size(); ++i) {
+      float dot_prod =
+          points_[0][i].x * points_[1][i].x + points_[0][i].y * points_[1][i].y;
+      float mag = std::sqrt(points_[0][i].x * points_[0][i].x +
+                            points_[0][i].y * points_[0][i].y) *
+                  std::sqrt(points_[1][i].x * points_[1][i].x +
+                            points_[1][i].y * points_[1][i].y);
+      theta.at<float>(points_[0][i].y, points_[0][i].x) =
+          std::acos(dot_prod / mag);
+    }
+    return theta;
+  }
+
+ private:
+  const vector_type& points_;
+  const int num_rows_;
+  const int num_cols_;
+};
+
 }  // end namespace oflow
 
 #endif /* SRC_OPTICAL_FLOW_VECTOR_STATISTICS_H_ */

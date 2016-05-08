@@ -89,10 +89,8 @@ class LKFlow {
     size_t i, k;
     for (i = k = 0; i < points_[1].size(); i++) {
       if (!status[i]) continue;
-
       points_[1][k++] = points_[1][i];
       points_[0][k] = points_[0][i];
-      // cv::circle(image, points_[1][i], 3, cv::Scalar(0, 255, 0), -1, 8);
     }
     points_[1].resize(k);
     points_[0].resize(k);
