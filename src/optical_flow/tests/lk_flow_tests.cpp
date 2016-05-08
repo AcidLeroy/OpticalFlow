@@ -99,10 +99,10 @@ TEST_F(TestLKFlow, DISABLED_UseAllPointsInImage) {
   LKFlow<cv::UMat> flow;
   flow.UseAllPointsInImage(true);
   auto of = flow.CalculateVectors(previous_frame, next_frame);
-  EXPECT_FLOAT_EQ(num_rows_ * num_cols_, of.GetMagnitude().size());
-  EXPECT_FLOAT_EQ(num_rows_ * num_cols_, of.GetOrientation().size());
-  EXPECT_FLOAT_EQ(num_rows_ * num_cols_, of.GetVx().size());
-  EXPECT_FLOAT_EQ(num_rows_ * num_cols_, of.GetVy().size());
+  EXPECT_FLOAT_EQ(num_rows_ * num_cols_, of.GetMagnitude().total());
+  EXPECT_FLOAT_EQ(num_rows_ * num_cols_, of.GetOrientation().total());
+  EXPECT_FLOAT_EQ(num_rows_ * num_cols_, of.GetVx().total());
+  EXPECT_FLOAT_EQ(num_rows_ * num_cols_, of.GetVy().total());
 }
 
 }  // end namespace oflow

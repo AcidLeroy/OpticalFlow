@@ -122,10 +122,11 @@ TEST(VectorStatistics, OrientationMat) {
   cv::Point2f a_pt{3.0, 0.0}, b_pt{5.0, 5.0};
   std::vector<cv::Point2f> list_a{a_pt, b_pt}, list_b{b_pt, a_pt};
   vector_type test_vecs{{list_a, list_b}};
-  VectorStatistics<cv::Mat> vs{test_vecs, cv::Mat(5, 5, CV_32F)};
+  VectorStatistics<cv::Mat> vs{test_vecs, cv::Mat(6, 6, CV_32F)};
   // Orientation is 45 degrees.
   float expected_orientation = 0.7853982;
-  auto actual_orientation = vs.Orientation();
+  cv::Mat actual_orientation = vs.Orientation();
+  vs.Orientation().copyTo(actual_orientation);
   ASSERT_FLOAT_EQ(expected_orientation,
                   actual_orientation.at<float>(a_pt.y, a_pt.x));
 }

@@ -63,12 +63,25 @@ class OpticalFlow {
 
 template <>
 class OpticalFlow<cv::Mat> {
-public:
-private:
-	 cv::Mat vx_;
-	 cv::Mat vy_;
-	 cv::Mat orientation_;
-	 cv::Mat magnitude_;
+ public:
+  OpticalFlow() = default;
+  OpticalFlow(cv::Mat vx, cv::Mat vy, cv::Mat orientation, cv::Mat magnitude)
+      : vx_(vx), vy_(vy), orientation_(orientation), magnitude_(magnitude) {}
+
+  const cv::Mat& GetVx() { return vx_; }
+  const cv::Mat& GetVy() { return vy_; }
+  const cv::Mat& GetOrientation() { return orientation_; }
+  const cv::Mat& GetMagnitude() { return magnitude_; }
+  bool IsEmpty() {
+    return vx_.empty() && vy_.empty() && orientation_.empty() &&
+           magnitude_.empty();
+  }
+
+ private:
+  cv::Mat vx_;
+  cv::Mat vy_;
+  cv::Mat orientation_;
+  cv::Mat magnitude_;
 };
 } /* namespace oflow */
 

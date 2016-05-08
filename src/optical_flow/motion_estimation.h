@@ -12,6 +12,7 @@
 #include <vector>
 #include <algorithm>
 #include "optical_flow.h"
+#include "vector_statistics.h"
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <iostream>
@@ -31,7 +32,7 @@ namespace stats {
  * Get the histogram for the image around the motion.
  */
 void GetHistoAround(const cv::Mat_<uint8_t>& thresholded_motion, int disk_size,
-                    cv::Mat& gray_scale_image, cv::Mat* bg_histogram) {
+                    const cv::Mat& gray_scale_image, cv::Mat* bg_histogram) {
   cv::Mat dialated;
   // Get disk
   cv::Mat disk = cv::getStructuringElement(cv::MORPH_ELLIPSE,
@@ -131,11 +132,19 @@ class MotionEstimation {
       throw MotionEstimationException("There is only one frame to read!");
 
     while (1) {
-      auto stats = flow->CalculateVectors(*current_frame, *next_frame);
-      auto thresh_mag = ThresholdVector(stats.GetMagnitude(), 0.25);
-      auto thresh_bin_image =
-          PointsToMat(stats.GetNumRows(), stats.GetNumRows(), thresh_mag,
-                      stats.GetPoints());
+      OpticalFlow<cv::Mat> stats =
+          flow->CalculateVectors(*current_frame, *next_frame);
+      cv::Mat binary_image;
+      double min_val;
+      double max_val;
+      cv::Point min_loc;
+      cv::Point max_loc;
+      cv::minMaxLoc(stats.GetMagnitude(), &min_val, &max_val, &min_loc,
+                    &max_loc);
+      cv::threshold(stats.GetMagnitude(), binary_image, 0.25 * max_val, 1,
+                    cv::THRESH_BINARY);
+      UpdateStats(binary_image, *(next_frame->GetMat()), stats.GetMagnitude(),
+                  stats.GetOrientation());
 
       std::swap(current_frame, next_frame);
       next_frame = reader_->ReadFrame();
@@ -144,18 +153,22 @@ class MotionEstimation {
   }
 
   void UpdateStats(const cv::Mat_<uint8_t>& binary_image,
-                   const cv::Mat& next_frame, const cv::Mat& magnitude,
+                   const cv::Mat& next_mat, const cv::Mat& magnitude,
                    const cv::Mat& orientation) {
     stats::UpdateCentroidAndOrientation(binary_image, &orientations_,
                                         &centroids_);
     constexpr int num_bins = 25;
-    stats::GetHistoAround(binary_image, num_bins, next_frame, &bg_histogram_);
+    stats::GetHistoAround(binary_image, num_bins, next_mat, &bg_histogram_);
     // Update magnitude histogram
+    const float magnitude_range[2] = {0, 0.2};
     stats::UpdateHistogram(binary_image, magnitude, &magnitude_histogram_,
-                           {0, 0.2}, num_bins);
+                           magnitude_range, num_bins);
     // Update orientation histogram
+    float orientation_range[2];
+    orientation_range[0] = -M_PI;
+    orientation_range[1] = M_PI;
     stats::UpdateHistogram(binary_image, orientation, &orientation_histogram_,
-                           {-M_PI, M_PI}, num_bins);
+                           orientation_range, num_bins);
   }
 
   template <typename T = double>

@@ -24,8 +24,8 @@ namespace oflow {
 template <typename mat_type>
 class LKFlow {
  public:
-  OpticalFlow<> CalculateVectors(const Image<mat_type> &previous_frame,
-                                 const Image<mat_type> &next_frame) {
+  OpticalFlow<cv::Mat> CalculateVectors(const Image<mat_type> &previous_frame,
+                                        const Image<mat_type> &next_frame) {
     auto previous_mat = previous_frame.GetMat();
     auto next_mat = next_frame.GetMat();
     // Assume we are always called with both images
@@ -42,10 +42,10 @@ class LKFlow {
                                  points_[1], status, err, win_size, 3,
                                  termcrit_, 0, 0.001);
         SanitizePoints(status);
-        VectorStatistics<> vs{points_};
-        OpticalFlow<> of{vs.VelocityX(),    vs.VelocityY(), vs.Orientation(),
-                         vs.Magnitude(),    points_[0],     previous_mat->rows,
-                         previous_mat->cols};
+        VectorStatistics<cv::Mat> vs(
+            points_, cv::Mat(previous_mat->rows, previous_mat->cols, CV_32F));
+        OpticalFlow<cv::Mat> of{vs.VelocityX(), vs.VelocityY(),
+                                vs.Orientation(), vs.Magnitude()};
         std::swap(points_[1], points_[0]);
         return of;
       }
@@ -53,7 +53,7 @@ class LKFlow {
       std::swap(points_[1], points_[0]);
     }
     // Return empty structure
-    return OpticalFlow<>{};
+    return OpticalFlow<cv::Mat>{};
   }
   vector_type GetTrackedPoints() const { return points_; }
 
