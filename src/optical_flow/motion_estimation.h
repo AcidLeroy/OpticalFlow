@@ -114,6 +114,41 @@ void UpdateCentroidAndOrientation(const cv::Mat& thresholded_image,
   }
 }
 
+cv::Mat CumSum(const cv::Mat& histogram) {
+  cv::Mat cumsum =
+      cv::Mat::zeros(histogram.rows, histogram.cols, histogram.type());
+  cumsum.at<float>(0) = (histogram.at<float>(0));
+  for (int i = 1; i < histogram.total(); ++i) {
+    cumsum.at<float>(i) = cumsum.at<float>(i - 1) + histogram.at<float>(i);
+  }
+  return cumsum;
+}
+
+void GetCentroidCdf(const cv::Mat& centroids, const cv::Mat& gray_frame,
+                    cv::Mat* x_cent_cdf, cv::Mat* y_cent_cdf) {
+  int num_bins = 25;
+  bool uniform = true;
+  bool accumulate = false;
+
+  // Calculate cdf for x
+  const float xrange[2] = {1, static_cast<float>(gray_frame.cols)};
+  const float* x_range = {xrange};
+  cv::Mat x_hist;
+  cv::Mat x_cent = centroids.col(0);
+  cv::calcHist(&x_cent, 1, 0, cv::Mat(), x_hist, 1, &num_bins, &x_range,
+               uniform, accumulate);
+  *x_cent_cdf = CumSum(x_hist);
+  // Calculate cdf for x
+  const float yrange[2] = {1, static_cast<float>(gray_frame.rows)};
+  const float* y_range = {yrange};
+  cv::Mat y_hist;
+  cv::Mat y_cent = centroids.col(1);
+  cv::calcHist(&y_cent, 1, 0, cv::Mat(), y_hist, 1, &num_bins, &y_range,
+               uniform, accumulate);
+  std::cout << "y_cent = " << std::endl << y_cent << std::endl;
+  *y_cent_cdf = CumSum(y_hist);
+}
+
 }  // End namespace stats
 
 template <typename ReaderType>

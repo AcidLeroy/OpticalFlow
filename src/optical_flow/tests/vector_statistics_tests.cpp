@@ -122,6 +122,7 @@ TEST(VectorStatistics, OrientationMat) {
   cv::Point2f a_pt{3.0, 0.0}, b_pt{5.0, 5.0};
   std::vector<cv::Point2f> list_a{a_pt, b_pt}, list_b{b_pt, a_pt};
   vector_type test_vecs{{list_a, list_b}};
+  // Warning! if the points step outside the Mat, things could be bad.
   VectorStatistics<cv::Mat> vs{test_vecs, cv::Mat(6, 6, CV_32F)};
   // Orientation is 45 degrees.
   float expected_orientation = 0.7853982;

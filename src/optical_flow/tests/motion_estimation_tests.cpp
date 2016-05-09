@@ -236,7 +236,29 @@ TEST(OflowStats, TestUpdateHistogram) {
   int num_bins = 25;
   const float range[2] = {0, 0.2};
   UpdateHistogram(thresholded_motion, motion_mags, &histogram, range, num_bins);
-  std::cout << "histogram = " << std::endl << histogram << std::endl;
+}
+
+TEST(OflowStats, TestCumSum) {
+  std::vector<float> data3{{1, 2, 3, 4, 5, 6}};
+  const cv::Mat data_mat = cv::Mat(1, 6, CV_32F, &data3[0]);
+  std::vector<float> expected{1, 3, 6, 10, 15, 21};
+  const cv::Mat expected_mat = cv::Mat(1, 6, CV_32F, &expected[0]);
+  cv::Mat actual = CumSum(data_mat);
+  for (int row = 0; row < data_mat.rows; ++row) {
+    for (int col = 0; col < data_mat.cols; ++col) {
+      ASSERT_EQ(expected_mat.at<float>(row, col), actual.at<float>(row, col));
+    }
+  }
+}
+
+TEST(OflowStats, TestGetCentroidCdf) {
+  std::vector<float> data3{{1, 2, 3, 4, 5, 6}};
+  const cv::Mat centroids = cv::Mat(3, 2, CV_32F, &data3[0]);
+  const cv::Mat gray_frame = cv::Mat::zeros(8, 8, CV_8U);
+  cv::Mat x_cent_cdf, y_cent_cdf;
+  GetCentroidCdf(centroids, gray_frame, &x_cent_cdf, &y_cent_cdf);
+  std::cout << "x_cent_cdf = " << std::endl << x_cent_cdf.t() << std::endl;
+  std::cout << "y_cent_cdf = " << std::endl << y_cent_cdf.t() << std::endl;
 }
 
 }  // end namespace stats
