@@ -174,12 +174,12 @@ TEST(OflowStats, TestUpdateCentroidAndOrientation) {
   // assume that img has already been thresholded.
   img = img.reshape(1, 8);
   img = img.t();
-  std::vector<double> orientations;
+  cv::Mat orientations;
   cv::Mat centroids;
   UpdateCentroidAndOrientation(img, &orientations, &centroids);
   UpdateCentroidAndOrientation(img, &orientations, &centroids);
   UpdateCentroidAndOrientation(img, &orientations, &centroids);
-  ASSERT_EQ(3, orientations.size());
+  ASSERT_EQ(3, orientations.total());
   ASSERT_EQ(3, centroids.rows);
 }
 
@@ -259,6 +259,15 @@ TEST(OflowStats, TestGetCentroidCdf) {
   GetCentroidCdf(centroids, gray_frame, &x_cent_cdf, &y_cent_cdf);
   std::cout << "x_cent_cdf = " << std::endl << x_cent_cdf.t() << std::endl;
   std::cout << "y_cent_cdf = " << std::endl << y_cent_cdf.t() << std::endl;
+}
+
+TEST(OflowStats, TestGetOrientationCdf) {
+  std::vector<float> data3{{1, 2, 3, 4, 5, 6}};
+  const cv::Mat orientations = cv::Mat(6, 1, CV_32F, &data3[0]);
+  cv::Mat orientation_cdf;
+  GetOrientationCdf(orientations, &orientation_cdf);
+  std::cout << "orientation_cdf = " << std::endl << orientation_cdf.t()
+            << std::endl;
 }
 
 }  // end namespace stats

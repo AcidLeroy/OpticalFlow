@@ -87,8 +87,7 @@ cv::Mat GetLogicalVector(const cv::Mat& intensity_image,
 }
 
 void UpdateCentroidAndOrientation(const cv::Mat& thresholded_image,
-                                  std::vector<double>* orientations,
-                                  cv::Mat* centroids) {
+                                  cv::Mat* orientations, cv::Mat* centroids) {
   cv::Mat labels, stats, current_centroids;
   cv::connectedComponentsWithStats(thresholded_image, labels, stats,
                                    current_centroids);
@@ -124,30 +123,40 @@ cv::Mat CumSum(const cv::Mat& histogram) {
   return cumsum;
 }
 
+void GetCdf(const cv::Mat& input, cv::Mat* output, int num_bins,
+            const float range[2]) {
+  bool uniform = true;
+  bool accumulate = false;
+  const float* i_range = {range};
+  cv::Mat hist;
+
+  cv::calcHist(&input, 1, 0, cv::Mat(), hist, 1, &num_bins, &i_range, uniform,
+               accumulate);
+  auto sum = cv::sum(hist);
+  cv::divide(CumSum(hist), sum, *output);
+}
+
 void GetCentroidCdf(const cv::Mat& centroids, const cv::Mat& gray_frame,
                     cv::Mat* x_cent_cdf, cv::Mat* y_cent_cdf) {
   int num_bins = 25;
-  bool uniform = true;
-  bool accumulate = false;
 
   // Calculate cdf for x
   const float xrange[2] = {1, static_cast<float>(gray_frame.cols)};
-  const float* x_range = {xrange};
-  cv::Mat x_hist;
   cv::Mat x_cent = centroids.col(0);
-  cv::calcHist(&x_cent, 1, 0, cv::Mat(), x_hist, 1, &num_bins, &x_range,
-               uniform, accumulate);
-  *x_cent_cdf = CumSum(x_hist);
+  GetCdf(x_cent, x_cent_cdf, num_bins, xrange);
   // Calculate cdf for x
   const float yrange[2] = {1, static_cast<float>(gray_frame.rows)};
-  const float* y_range = {yrange};
-  cv::Mat y_hist;
   cv::Mat y_cent = centroids.col(1);
-  cv::calcHist(&y_cent, 1, 0, cv::Mat(), y_hist, 1, &num_bins, &y_range,
-               uniform, accumulate);
-  std::cout << "y_cent = " << std::endl << y_cent << std::endl;
-  *y_cent_cdf = CumSum(y_hist);
+  GetCdf(y_cent, y_cent_cdf, num_bins, yrange);
 }
+
+void GetOrientationCdf(const cv::Mat& orientation, cv::Mat* orient_cent_cdf) {
+  int num_bins = 25;
+  const float xrange[2] = {-90, 90};
+  GetCdf(orientation, orient_cent_cdf, num_bins, xrange);
+}
+
+// void NormalizeHistogram
 
 }  // End namespace stats
 
@@ -239,7 +248,7 @@ class MotionEstimation {
   // Centroids for each optical flow frame
   cv::Mat centroids_;
   // orientations for each optical flow frame
-  std::vector<double> orientations_;
+  cv::Mat orientations_;
   // Background histogram
   cv::Mat bg_histogram_;
   // Histogram for orientations of motion vectors
