@@ -270,6 +270,32 @@ TEST(OflowStats, TestGetOrientationCdf) {
             << std::endl;
 }
 
+bool IsEqual(const cv::Mat &a, const cv::Mat &b, double tolerance = 0.0) {
+  if (tolerance != 0.0) {
+    cv::Mat diff = cv::abs(a - b);
+    double min_val;
+    double max_val;
+    cv::Point min_loc;
+    cv::Point max_loc;
+    cv::minMaxLoc(diff, &min_val, &max_val, &min_loc, &max_loc);
+    return max_val <= tolerance;
+  }
+  return cv::countNonZero(a != b) == 0;
+}
+
+TEST(OflowStats, TestNormalizeHistogramCdf) {
+  std::vector<float> hist_data{{1, 2, 3, 4, 5, 6}};
+  const cv::Mat hist(1, 6, CV_32F, &hist_data[0]);
+  cv::Mat normalized_hist_cdf;
+  NormalizeHistogramCdf(hist, &normalized_hist_cdf);
+  cv::Mat expected = (cv::Mat_<float>(1, 6) << 0.047619049, 0.14285715,
+                      0.2857143, 0.47619048, 0.71428573, 1);
+  bool eq = IsEqual(expected, normalized_hist_cdf);
+  ASSERT_TRUE(eq) << " expected = " << std::endl << expected << std::endl
+                  << "actual = " << std::endl << normalized_hist_cdf
+                  << std::endl;
+}
+
 }  // end namespace stats
 
 }  // end namepsace oflow

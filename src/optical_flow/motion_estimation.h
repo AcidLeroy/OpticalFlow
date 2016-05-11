@@ -156,7 +156,10 @@ void GetOrientationCdf(const cv::Mat& orientation, cv::Mat* orient_cent_cdf) {
   GetCdf(orientation, orient_cent_cdf, num_bins, xrange);
 }
 
-// void NormalizeHistogram
+void NormalizeHistogramCdf(const cv::Mat& hist, cv::Mat* normalized_hist_cdf) {
+  auto sum = cv::sum(hist);
+  cv::divide(CumSum(hist), sum, *normalized_hist_cdf);
+}
 
 }  // End namespace stats
 
@@ -194,6 +197,12 @@ class MotionEstimation {
       next_frame = reader_->ReadFrame();
       if (next_frame == nullptr) break;
     }
+    // Collect cdfs from video
+    cv::Mat x_cent_cdf, y_cent_cdf, orient_cent_cdf, bg_cdf, motion_mag_cdf,
+        motion_orient_cdf;
+    NormalizeInternalHistogramCdfs(*(current_frame->GetMat()), &x_cent_cdf,
+                                   &y_cent_cdf, &orient_cent_cdf, &bg_cdf,
+                                   &motion_mag_cdf, &motion_orient_cdf);
   }
 
   void UpdateStats(const cv::Mat_<uint8_t>& binary_image,
@@ -213,6 +222,27 @@ class MotionEstimation {
     orientation_range[1] = M_PI;
     stats::UpdateHistogram(binary_image, orientation, &orientation_histogram_,
                            orientation_range, num_bins);
+  }
+
+  void NormalizeInternalHistogramCdfs(const cv::Mat& gray_frame,
+                                      cv::Mat* x_cent_cdf, cv::Mat* y_cent_cdf,
+                                      cv::Mat* orient_cent_cdf, cv::Mat* bg_cdf,
+                                      cv::Mat* motion_mag_cdf,
+                                      cv::Mat* motion_orient_cdf) {
+    // blob centroid
+    stats::GetCentroidCdf(centroids_, gray_frame, x_cent_cdf, y_cent_cdf);
+
+    // blob orientation
+    stats::GetOrientationCdf(orientations_, orient_cent_cdf);
+
+    // background histogram
+    stats::NormalizeHistogramCdf(bg_histogram_, bg_cdf);
+
+    // motion vector magnitudes
+    stats::NormalizeHistogramCdf(magnitude_histogram_, motion_mag_cdf);
+
+    // motion vector orientations
+    stats::NormalizeHistogramCdf(orientation_histogram_, motion_orient_cdf);
   }
 
   template <typename T = double>
