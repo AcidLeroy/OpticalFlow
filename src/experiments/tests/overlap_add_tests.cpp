@@ -46,6 +46,7 @@ std::string type2str(int type) {
 
   uchar depth = type & CV_MAT_DEPTH_MASK;
   uchar chans = 1 + (type >> CV_CN_SHIFT);
+  std::cout << "type= " << type << std::endl;
 
   switch (depth) {
     case CV_8U:
@@ -257,6 +258,9 @@ TEST(RandomThought, DoesThisWork) {
   // m.copyTo(*ptr);
 
   cv::UMat* ptr = new cv::UMat(m.getUMat(cv::ACCESS_READ));
+}
+TEST(OverlapAdd, TestType) {
+  std::cout << "type is " << type2str(6) << std::endl; 
 }
 
 }  // end namepsace oflow

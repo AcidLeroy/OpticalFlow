@@ -142,11 +142,11 @@ void GetCentroidCdf(const cv::Mat& centroids, const cv::Mat& gray_frame,
 
   // Calculate cdf for x
   const float xrange[2] = {1, static_cast<float>(gray_frame.cols)};
-  cv::Mat x_cent = centroids.col(0);
+  cv::Mat_<float> x_cent = centroids.col(0);
   GetCdf(x_cent, x_cent_cdf, num_bins, xrange);
   // Calculate cdf for x
   const float yrange[2] = {1, static_cast<float>(gray_frame.rows)};
-  cv::Mat y_cent = centroids.col(1);
+  cv::Mat_<float> y_cent = centroids.col(1);
   GetCdf(y_cent, y_cent_cdf, num_bins, yrange);
 }
 
@@ -276,15 +276,15 @@ class MotionEstimation {
  private:
   std::shared_ptr<ReaderType> reader_;
   // Centroids for each optical flow frame
-  cv::Mat centroids_;
+  cv::Mat_<float> centroids_;
   // orientations for each optical flow frame
-  cv::Mat orientations_;
+  cv::Mat_<float> orientations_;
   // Background histogram
-  cv::Mat bg_histogram_;
+  cv::Mat_<float> bg_histogram_;
   // Histogram for orientations of motion vectors
-  cv::Mat orientation_histogram_;
+  cv::Mat_<float> orientation_histogram_;
   // Histogram for magnitudes of motion vectors
-  cv::Mat magnitude_histogram_;
+  cv::Mat_<float> magnitude_histogram_;
 };
 
 } /* namespace oflow */
