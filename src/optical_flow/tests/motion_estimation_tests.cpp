@@ -298,26 +298,13 @@ TEST(OflowStats, TestNormalizeHistogramCdf) {
                   << std::endl;
 }
 
-std::string ConstructFeatureString(
-    const std::vector<cv::Mat> &feature_vectors) {
-  std::stringstream oss;
-  for (auto &mat : feature_vectors) {
-    for (size_t i = 0; i < mat.total(); ++i) {
-      oss << mat.at<double>(i) << "\t";
-    }
-    oss << "1\t";
-  }
-  oss << std::endl;
-  return oss.str();
-}
-
 TEST(OflowStats, TestConstructFeatureString) {
   cv::Mat mat1 = (cv::Mat_<double>(1, 2) << 1.0, 2.0);
   cv::Mat mat2 = (cv::Mat_<double>(1, 2) << 3, 4);
   std::string expected_string("1\t2\t1\t3\t4\t1\t\n");
   std::setprecision(8);
   std::cout << "expected string = " << expected_string << std::endl;
-  std::vector<cv::Mat> feature_vectors{mat1, mat2};
+  std::vector<cv::Mat *> feature_vectors{&mat1, &mat2};
   ASSERT_STREQ(expected_string.c_str(),
                ConstructFeatureString(feature_vectors).c_str());
 }

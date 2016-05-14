@@ -33,7 +33,7 @@ class VideoFileReader {
       throw std::runtime_error("OPENCV could not open camera or file.");
     }
   };
-  std::shared_ptr<Image<cv::UMat>> ReadFrame();
+  std::shared_ptr<Image<cv::Mat>> ReadFrame();
 
  private:
   std::string filename_;

@@ -161,6 +161,19 @@ void NormalizeHistogramCdf(const cv::Mat& hist, cv::Mat* normalized_hist_cdf) {
   cv::divide(CumSum(hist), sum, *normalized_hist_cdf);
 }
 
+std::string ConstructFeatureString(
+    const std::vector<cv::Mat*>& feature_vectors) {
+  std::stringstream oss;
+  for (auto& mat : feature_vectors) {
+    for (size_t i = 0; i < mat->total(); ++i) {
+      oss << mat->at<double>(i) << "\t";
+    }
+    oss << "1\t";
+  }
+  oss << std::endl;
+  return oss.str();
+}
+
 }  // End namespace stats
 
 template <typename ReaderType>
@@ -203,6 +216,12 @@ class MotionEstimation {
     NormalizeInternalHistogramCdfs(*(current_frame->GetMat()), &x_cent_cdf,
                                    &y_cent_cdf, &orient_cent_cdf, &bg_cdf,
                                    &motion_mag_cdf, &motion_orient_cdf);
+
+    std::vector<cv::Mat*> features{&x_cent_cdf,      &y_cent_cdf,
+                                   &orient_cent_cdf, &bg_cdf,
+                                   &motion_mag_cdf,  &motion_orient_cdf};
+    std::string out = stats::ConstructFeatureString(features);
+    std::cout << out << std::endl;
   }
 
   void UpdateStats(const cv::Mat_<uint8_t>& binary_image,
