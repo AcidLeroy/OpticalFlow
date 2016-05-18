@@ -58,5 +58,13 @@ add_executable(${lib_name}_tests tests/${lib_name}_tests.cpp )
 target_link_libraries(${lib_name}_tests
   gtest gtest_main gmock
   ${OpenCV_LIBS})
+  
+#
+# Visualize Optical Flow
+#
+set(lib_name visualize_flow)
 
+add_executable(${lib_name} tests/${lib_name}.cpp )
+target_link_libraries(${lib_name}
+  ${OpenCV_LIBS})
 

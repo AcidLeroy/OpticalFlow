@@ -94,7 +94,7 @@ TEST(LkFlowTests, NoFrames) {
   ASSERT_TRUE(of.IsEmpty());
 }
 
-TEST_F(TestLKFlow, DISABLED_UseAllPointsInImage) {
+TEST_F(TestLKFlow, UseAllPointsInImage) {
   Image<cv::UMat> previous_frame(a_), next_frame(b_);
   LKFlow<cv::UMat> flow;
   flow.UseAllPointsInImage(true);
