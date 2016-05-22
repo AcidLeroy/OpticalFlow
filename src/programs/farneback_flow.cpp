@@ -1,9 +1,18 @@
+/*
+ * farneback_flow.cpp
+ *
+ *  Created on: May 21, 2016
+ *      Author: Cody W. Eilar <Cody.Eilar@Gmail.com>
+ */
+#include "optical_flow.h"
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include "opencv2/video/tracking.hpp"
+
+#include <cmath>
 #include <iostream>
-#include "image.h"
-#include "lk_flow.h"
 
 std::vector<cv::Mat> CreateTestMats() {
   std::vector<cv::Mat> t;
@@ -110,37 +119,73 @@ std::vector<cv::Mat> CreateTestMats() {
   return t;
 }
 
-void ShowImage(const cv::Mat &image, const std::string &name) {
-  cv::namedWindow(name, CV_WINDOW_NORMAL);
-  cv::imshow(name, image);
+namespace cv {
+static void drawOptFlowMap(const Mat& flow, Mat& cflowmap, int step, double,
+                           const Scalar& color) {
+  for (int y = 0; y < cflowmap.rows; y += step)
+    for (int x = 0; x < cflowmap.cols; x += step) {
+      const Point2f& fxy = flow.at<Point2f>(y, x);
+      line(cflowmap, Point(x, y), Point(cvRound(x + fxy.x), cvRound(y + fxy.y)),
+           color);
+      circle(cflowmap, Point(x, y), 2, color, -1);
+    }
+}
 }
 
-cv::Mat ResizeImage(const cv::Mat &image) {
+static oflow::OpticalFlow<cv::Mat> GetOpticalFlow(const cv::Mat& flow) {
+  cv::Mat mag = cv::Mat::zeros(flow.rows, flow.cols, CV_32F);
+  cv::Mat vx = cv::Mat::zeros(flow.rows, flow.cols, CV_32F);
+  cv::Mat vy = cv::Mat::zeros(flow.rows, flow.cols, CV_32F);
+  cv::Mat orient = cv::Mat::zeros(flow.rows, flow.cols, CV_32F);
+  for (int y = 0; y < flow.rows; ++y)
+    for (int x = 0; x < flow.cols; ++x) {
+      const cv::Point2f& fxy = flow.at<cv::Point2f>(y, x);
+      float magnitude = std::sqrt(std::pow(fxy.x, 2) + std::pow(fxy.y, 2));
+      mag.at<float>(y, x) = magnitude;
+      vx.at<float>(y, x) = fxy.x;
+      vy.at<float>(y, x) = fxy.y;
+      // unit vector lies on x=1 y = 0
+      float dot_product = fxy.y * 0 + fxy.x * 1;
+      if (magnitude != 0) {
+        orient.at<float>(y, x) = std::acos(dot_product / magnitude);
+      } else {
+        orient.at<float>(y, x) = 0;
+      }
+    }
+  return oflow::OpticalFlow<cv::Mat>(vx, vy, orient, mag);
+}
+
+cv::Mat ResizeImage(const cv::Mat& image) {
   cv::Mat output;
   int interpolation = cv::INTER_LINEAR;
   cv::resize(image, output, cv::Size(), 20, 20, interpolation);
   return output;
 }
 
-int main(void) {
+int main() {
   std::vector<cv::Mat> images = CreateTestMats();
-  ShowImage(ResizeImage(images[0]), "image1");
-  ShowImage(ResizeImage(images[1]), "image2");
-  oflow::Image<cv::Mat> frame1(std::make_shared<cv::Mat>(images[0]));
-  oflow::Image<cv::Mat> frame2(std::make_shared<cv::Mat>(images[1]));
-  oflow::LKFlow<cv::Mat> flow;
-  // flow.UseAllPointsInImage(true);
-  oflow::OpticalFlow<cv::Mat> a = flow.CalculateVectors(frame1, frame2);
-  ShowImage(ResizeImage(a.GetMagnitude()), "magnitude");
-  std::cout << "magnitude = " << std::endl << a.GetMagnitude() << std::endl;
-  ShowImage(ResizeImage(a.GetOrientation()), "orientation");
-  std::cout << "orientation = " << std::endl << a.GetOrientation() << std::endl;
-  ShowImage(ResizeImage(a.GetVx()), "vx");
-  std::cout << "vx = " << std::endl << a.GetVx() << std::endl;
-  ShowImage(ResizeImage(a.GetVy()), "vy");
-  std::cout << "vy = " << std::endl << a.GetVy() << std::endl;
-  cv::waitKey(0);
+  cv::Mat uflow, cflow, flow;
+  cv::calcOpticalFlowFarneback(images[0], images[1], uflow, 0.5, 3, 5, 3, 5,
+                               1.1, 0);
+  auto optical_flow = GetOpticalFlow(uflow);
 
-  // std::cout << "image 1 " << std::endl << images[0] << std::endl;
-  return 0;
+  //  cv::cvtColor(images[0], cflow, cv::COLOR_GRAY2BGR);
+  //  uflow.copyTo(flow);
+  //  cv::drawOptFlowMap(flow, cflow, 11, 1.5, cv::Scalar(0, 255, 0));
+
+  cv::namedWindow("Magnitude", 1);
+  imshow("Magnitude", ResizeImage(optical_flow.GetMagnitude()));
+
+  cv::namedWindow("Vx", 1);
+  imshow("Vx", ResizeImage(optical_flow.GetVx()));
+
+  cv::namedWindow("Vy", 1);
+  imshow("Vy", ResizeImage(optical_flow.GetVy()));
+
+  cv::namedWindow("Orientation", 1);
+  imshow("Orientation", ResizeImage(optical_flow.GetOrientation()));
+
+  std::cout << "Orientation: " << std::endl << optical_flow.GetOrientation()
+            << std::endl;
+  cv::waitKey(0);
 }

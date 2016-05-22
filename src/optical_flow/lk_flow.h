@@ -17,7 +17,25 @@
 #include <vector>
 
 namespace oflow {
+namespace utils {
+vector_type SanitizePoints(const vector_type &points,
+                           const std::vector<uchar> &status) {
+  vector_type sanitized_points;
+  sanitized_points[0].reserve(points[0].size());
+  sanitized_points[1].reserve(points[1].size());
+  size_t num_valid_points = 0;
 
+  for (size_t i = 0; i < points[0].size(); ++i) {
+    if (!status[i]) continue;
+    sanitized_points[0].push_back(points[0][i]);
+    sanitized_points[1].push_back(points[1][i]);
+    num_valid_points++;
+  }
+  sanitized_points[0].resize(num_valid_points);
+  sanitized_points[1].resize(num_valid_points);
+  return sanitized_points;
+}
+}
 /**
  * Lucas-Kanade optical flow interface
  */
@@ -41,9 +59,12 @@ class LKFlow {
         cv::calcOpticalFlowPyrLK(*previous_mat, *next_mat, points_[0],
                                  points_[1], status, err, win_size, 3,
                                  termcrit_, 0, 0.001);
-        SanitizePoints(status);
+        points_ = utils::SanitizePoints(points_, status);
+
         VectorStatistics<cv::Mat> vs(
             points_, cv::Mat(previous_mat->rows, previous_mat->cols, CV_32F));
+
+        ;
         OpticalFlow<cv::Mat> of{vs.VelocityX(), vs.VelocityY(),
                                 vs.Orientation(), vs.Magnitude()};
         std::swap(points_[1], points_[0]);
@@ -83,17 +104,6 @@ class LKFlow {
                        cv::Size(-1, -1), termcrit_);
     }
     need_to_init_ = false;
-  }
-
-  void SanitizePoints(const std::vector<uchar> &status) {
-    size_t i, k;
-    for (i = k = 0; i < points_[1].size(); i++) {
-      if (!status[i]) continue;
-      points_[1][k++] = points_[1][i];
-      points_[0][k] = points_[0][i];
-    }
-    points_[1].resize(k);
-    points_[0].resize(k);
   }
 
  private:

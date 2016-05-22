@@ -8,9 +8,14 @@ target_link_libraries(${prog_name}
   ${OpenCV_LIBS}
   readers)
   
-  set(prog_name extract_features)
+set(prog_name extract_features)
 add_executable(${prog_name} ${prog_name}.cpp)
 target_link_libraries(${prog_name}
   ${OpenCV_LIBS}
   readers)
 
+set(prog_name farneback_flow)
+add_executable(${prog_name} ${prog_name}.cpp)
+target_link_libraries(${prog_name}
+  ${OpenCV_LIBS}
+)

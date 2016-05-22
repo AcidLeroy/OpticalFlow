@@ -105,4 +105,28 @@ TEST_F(TestLKFlow, UseAllPointsInImage) {
   EXPECT_FLOAT_EQ(num_rows_ * num_cols_, of.GetVy().total());
 }
 
+namespace utils {
+TEST(LkFlowHelpers, TestSanitizePoints) {
+  vector_type points;
+  std::vector<uchar> status;
+  for (size_t i = 0; i < 10; ++i) {
+    points[0].push_back(cv::Point_<float>(1 + i, 2 + i));
+    points[1].push_back(cv::Point_<float>(3 + i, 4 + i));
+    if (i % 2 == 0) {
+      status.push_back(1);
+    } else {
+      status.push_back(0);
+    }
+  }
+
+  auto sanitized_points = SanitizePoints(points, status);
+  ASSERT_EQ(5, sanitized_points[0].size());
+  ASSERT_EQ(5, sanitized_points[1].size());
+
+  for (auto &i : sanitized_points[0]) {
+    std::cout << " i = " << i << std::endl;
+  }
+}
+}  // end namespace utils
+
 }  // end namespace oflow
