@@ -5,6 +5,7 @@
 #include "../optical_flow/motion_estimation.h"
 #include "../optical_flow/optical_flow.h"
 #include "../optical_flow/lk_flow.h"
+#include "../optical_flow/farneback_flow.h"
 
 #include "opencv2/core/utility.hpp"
 #include "opencv2/highgui.hpp"
@@ -38,18 +39,7 @@ int main(int argc, const char* argv[]) {
   // oflow::VideoFileReader f(vdofile);
   std::shared_ptr<oflow::VideoFileReader> f(
       new oflow::VideoFileReader(vdofile));
-  oflow::MotionEstimation<oflow::VideoFileReader> me(f);
-  std::shared_ptr<oflow::LKFlow<cv::Mat>> lk_flow(new oflow::LKFlow<cv::Mat>());
-  me.EstimateMotion(lk_flow);
-
-  //  while (true) {
-  //    auto image = f.ReadFrame();
-  //    if (image == nullptr) {
-  //      std::cout << "No more frames to read." << std::endl;
-  //      break;
-  //    }
-  //    auto frame = image->GetMat();
-  //    cv::imshow("Read image", *frame);
-  //    if (::cv::waitKey(30) >= 0) break;
-  //  }
+  oflow::MotionEstimation<oflow::VideoFileReader, cv::Mat> me(f);
+  std::shared_ptr<oflow::FarneBackFlow> my_flow(new oflow::FarneBackFlow());
+  me.EstimateMotion(my_flow);
 }

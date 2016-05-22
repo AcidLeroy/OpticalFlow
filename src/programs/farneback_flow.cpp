@@ -5,6 +5,7 @@
  *      Author: Cody W. Eilar <Cody.Eilar@Gmail.com>
  */
 #include "optical_flow.h"
+#include "farneback_flow.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc.hpp>
@@ -132,29 +133,6 @@ static void drawOptFlowMap(const Mat& flow, Mat& cflowmap, int step, double,
 }
 }
 
-static oflow::OpticalFlow<cv::Mat> GetOpticalFlow(const cv::Mat& flow) {
-  cv::Mat mag = cv::Mat::zeros(flow.rows, flow.cols, CV_32F);
-  cv::Mat vx = cv::Mat::zeros(flow.rows, flow.cols, CV_32F);
-  cv::Mat vy = cv::Mat::zeros(flow.rows, flow.cols, CV_32F);
-  cv::Mat orient = cv::Mat::zeros(flow.rows, flow.cols, CV_32F);
-  for (int y = 0; y < flow.rows; ++y)
-    for (int x = 0; x < flow.cols; ++x) {
-      const cv::Point2f& fxy = flow.at<cv::Point2f>(y, x);
-      float magnitude = std::sqrt(std::pow(fxy.x, 2) + std::pow(fxy.y, 2));
-      mag.at<float>(y, x) = magnitude;
-      vx.at<float>(y, x) = fxy.x;
-      vy.at<float>(y, x) = fxy.y;
-      // unit vector lies on x=1 y = 0
-      float dot_product = fxy.y * 0 + fxy.x * 1;
-      if (magnitude != 0) {
-        orient.at<float>(y, x) = std::acos(dot_product / magnitude);
-      } else {
-        orient.at<float>(y, x) = 0;
-      }
-    }
-  return oflow::OpticalFlow<cv::Mat>(vx, vy, orient, mag);
-}
-
 cv::Mat ResizeImage(const cv::Mat& image) {
   cv::Mat output;
   int interpolation = cv::INTER_LINEAR;
@@ -167,7 +145,7 @@ int main() {
   cv::Mat uflow, cflow, flow;
   cv::calcOpticalFlowFarneback(images[0], images[1], uflow, 0.5, 3, 5, 3, 5,
                                1.1, 0);
-  auto optical_flow = GetOpticalFlow(uflow);
+  auto optical_flow = oflow::utils::GetOpticalFlow(uflow);
 
   //  cv::cvtColor(images[0], cflow, cv::COLOR_GRAY2BGR);
   //  uflow.copyTo(flow);

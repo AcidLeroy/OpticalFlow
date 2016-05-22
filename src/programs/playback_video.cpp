@@ -40,7 +40,7 @@ int main(int argc, const char* argv[]) {
   oflow::VideoFileReader f(vdofile);
 
   while (true) {
-    auto image = f.ReadFrame();
+    auto image = f.ReadFrame<cv::Mat>();
     if (image == nullptr) {
       std::cout << "No more frames to read." << std::endl;
       break;

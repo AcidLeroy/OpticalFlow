@@ -24,14 +24,14 @@ namespace oflow {
 
 TEST(MotionEstimation, NoFramesToRead) {
   std::shared_ptr<MockReader> mock(new MockReader{"some_file.mov"});
-  MotionEstimation<MockReader> me(mock);
+  MotionEstimation<MockReader, cv::Mat> me(mock);
   std::shared_ptr<cv::Mat> a_ =
       std::make_shared<cv::Mat>(cv::Mat(256, 256, CV_8U));
   cv::randu(*a_, 0, 256);
   // Stuck using shared pointers because it was a pain to use unique ptrs with
   // google mock
   std::shared_ptr<Image<>> frame1{new Image<>(a_)};
-  EXPECT_CALL(*mock, ReadFrame()).WillOnce(Return(nullptr));
+  EXPECT_CALL(*mock, ReadFrameMat()).WillOnce(Return(nullptr));
 
   std::shared_ptr<MockFlow> mflow{new MockFlow()};
   ASSERT_THROW(me.EstimateMotion<MockFlow>(mflow), MotionEstimationException);
@@ -39,14 +39,14 @@ TEST(MotionEstimation, NoFramesToRead) {
 
 TEST(MotionEstimation, OnlyOneFrameInImageSequence) {
   std::shared_ptr<MockReader> mock(new MockReader{"some_file.mov"});
-  MotionEstimation<MockReader> me(mock);
+  MotionEstimation<MockReader, cv::Mat> me(mock);
   std::shared_ptr<cv::Mat> a_ =
       std::make_shared<cv::Mat>(cv::Mat(256, 256, CV_8U));
   cv::randu(*a_, 0, 256);
   // Stuck using shared pointers because it was a pain to use unique ptrs with
   // google mock
   std::shared_ptr<Image<>> frame1{new Image<>(a_)};
-  EXPECT_CALL(*mock, ReadFrame())
+  EXPECT_CALL(*mock, ReadFrameMat())
       .WillOnce(Return(frame1))
       .WillOnce(Return(nullptr));
 
@@ -56,7 +56,7 @@ TEST(MotionEstimation, OnlyOneFrameInImageSequence) {
 
 TEST(MotionEstimation, ReadTwoImages) {
   std::shared_ptr<MockReader> mock(new MockReader{"some_file.mov"});
-  MotionEstimation<MockReader> me(mock);
+  MotionEstimation<MockReader, cv::Mat> me(mock);
   std::shared_ptr<cv::Mat> a_ =
       std::make_shared<cv::Mat>(cv::Mat(256, 256, CV_8U));
   cv::randu(*a_, 0, 256);
@@ -67,7 +67,7 @@ TEST(MotionEstimation, ReadTwoImages) {
   // google mock
   std::shared_ptr<Image<>> frame1{new Image<>(a_)};
   std::shared_ptr<Image<>> frame2{new Image<>(b_)};
-  EXPECT_CALL(*mock, ReadFrame())
+  EXPECT_CALL(*mock, ReadFrameMat())
       .WillOnce(Return(frame1))
       .WillOnce(Return(frame2))
       .WillOnce(Return(nullptr));
@@ -84,7 +84,7 @@ TEST(MotionEstimation, ReadTwoImages) {
 
 TEST(MotionEstimation, ThresholdFlowStats) {
   std::shared_ptr<MockReader> mock(new MockReader{"some_file.mov"});
-  MotionEstimation<MockReader> me(mock);
+  MotionEstimation<MockReader, cv::Mat> me(mock);
   std::vector<float> points_to_thresh{1, 2, 3, 4, 5};
   double percent_of_max{.5};
   auto actual = me.ThresholdVector(points_to_thresh, percent_of_max);
@@ -94,7 +94,7 @@ TEST(MotionEstimation, ThresholdFlowStats) {
 
 TEST(MotionEstimation, PointsToMat) {
   std::shared_ptr<MockReader> mock(new MockReader{"some_file.mov"});
-  MotionEstimation<MockReader> me(mock);
+  MotionEstimation<MockReader, cv::Mat> me(mock);
   cv::Mat original_image = cv::Mat::zeros(3, 3, CV_32F);
   std::vector<cv::Point_<float>> points{{0, 0}, {1, 1}, {2, 2}};
   std::vector<float> magnitudes{1.0, 2.0, 3.0};
@@ -307,6 +307,23 @@ TEST(OflowStats, TestConstructFeatureString) {
   std::vector<cv::Mat *> feature_vectors{&mat1, &mat2};
   ASSERT_STREQ(expected_string.c_str(),
                ConstructFeatureString(feature_vectors).c_str());
+}
+
+// This test verifies that if you call getMat() that you modify the original
+// umat data.
+TEST(OpencvStuff, TestGettingMatFromUMat) {
+  cv::UMat a = cv::UMat::zeros(5, 5, CV_32F);
+  cv::Mat b = a.getMat(cv::ACCESS_RW);
+  for (size_t i = 0; i < b.total(); ++i) {
+    b.at<float>(i) = i;
+  }
+  // std::cout << "b == " << std::endl << b << std::endl;
+  cv::Mat c = a.getMat(cv::ACCESS_RW);
+  // std::cout << "c == " << std::endl << c << std::endl;
+
+  for (size_t i = 0; i < b.total(); ++i) {
+    ASSERT_FLOAT_EQ(b.at<float>(i), c.at<float>(i));
+  }
 }
 
 }  // end namespace stats

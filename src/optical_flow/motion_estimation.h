@@ -8,14 +8,19 @@
 #ifndef SRC_OPTICAL_FLOW_MOTION_ESTIMATION_H_
 #define SRC_OPTICAL_FLOW_MOTION_ESTIMATION_H_
 
-#include <memory>
-#include <vector>
-#include <algorithm>
 #include "optical_flow.h"
 #include "vector_statistics.h"
+
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <iostream>
+#include <memory>
+#include <vector>
+#include <algorithm>
+#include <typeinfo>
 
 namespace oflow {
 
@@ -174,9 +179,45 @@ std::string ConstructFeatureString(
   return oss.str();
 }
 
+template <typename mat_type = cv::Mat>
+void UpdateStats(const mat_type& binary_image, const mat_type& next_mat,
+                 const cv::Mat& magnitude, const cv::Mat& orientation,
+                 cv::Mat* orientations, cv::Mat* centroids,
+                 cv::Mat* bg_histogram, cv::Mat* magnitude_histogram,
+                 cv::Mat* orientation_histogram) {
+  cv::Mat bin;
+  binary_image.convertTo(bin, CV_8U);
+  stats::UpdateCentroidAndOrientation(bin, orientations, centroids);
+  constexpr int num_bins = 25;
+  stats::GetHistoAround(binary_image, num_bins, next_mat, bg_histogram);
+  // Update magnitude histogram
+  const float magnitude_range[2] = {0, 0.2};
+  stats::UpdateHistogram(binary_image, magnitude, magnitude_histogram,
+                         magnitude_range, num_bins);
+  // Update orientation histogram
+  float orientation_range[2];
+  orientation_range[0] = -M_PI;
+  orientation_range[1] = M_PI;
+  stats::UpdateHistogram(binary_image, orientation, orientation_histogram,
+                         orientation_range, num_bins);
+}
+
+template <>
+void UpdateStats<cv::UMat>(const cv::UMat& binary_image,
+                           const cv::UMat& next_mat, const cv::Mat& magnitude,
+                           const cv::Mat& orientation, cv::Mat* orientations,
+                           cv::Mat* centroids, cv::Mat* bg_histogram,
+                           cv::Mat* magnitude_histogram,
+                           cv::Mat* orientation_histogram) {
+  stats::UpdateStats(binary_image.getMat(cv::ACCESS_RW),
+                     next_mat.getMat(cv::ACCESS_RW), magnitude, orientation,
+                     orientations, centroids, bg_histogram, magnitude_histogram,
+                     orientation_histogram);
+}
+
 }  // End namespace stats
 
-template <typename ReaderType>
+template <typename ReaderType, typename mat_type>
 class MotionEstimation {
  public:
   explicit MotionEstimation(std::shared_ptr<ReaderType> reader)
@@ -184,17 +225,17 @@ class MotionEstimation {
 
   template <typename OpticalFlowType>
   void EstimateMotion(std::shared_ptr<OpticalFlowType> flow) {
-    auto current_frame = reader_->ReadFrame();
+    auto current_frame = reader_->template ReadFrame<mat_type>();
     if (current_frame == nullptr)
       throw MotionEstimationException("There are no frames to read!");
-    auto next_frame = reader_->ReadFrame();
+    auto next_frame = reader_->template ReadFrame<mat_type>();
     if (next_frame == nullptr)
       throw MotionEstimationException("There is only one frame to read!");
 
     while (1) {
       OpticalFlow<cv::Mat> stats =
           flow->CalculateVectors(*current_frame, *next_frame);
-      cv::Mat binary_image;
+      mat_type binary_image;
       double min_val;
       double max_val;
       cv::Point min_loc;
@@ -203,11 +244,14 @@ class MotionEstimation {
                     &max_loc);
       cv::threshold(stats.GetMagnitude(), binary_image, 0.25 * max_val, 1,
                     cv::THRESH_BINARY);
-      UpdateStats(binary_image, *(next_frame->GetMat()), stats.GetMagnitude(),
-                  stats.GetOrientation());
+
+      stats::UpdateStats(binary_image, *(next_frame->GetMat()),
+                         stats.GetMagnitude(), stats.GetOrientation(),
+                         &orientations_, &centroids_, &bg_histogram_,
+                         &magnitude_histogram_, &orientation_histogram_);
 
       std::swap(current_frame, next_frame);
-      next_frame = reader_->ReadFrame();
+      next_frame = reader_->template ReadFrame<mat_type>();
       if (next_frame == nullptr) break;
     }
     // Collect cdfs from video
@@ -222,25 +266,6 @@ class MotionEstimation {
                                    &motion_mag_cdf,  &motion_orient_cdf};
     std::string out = stats::ConstructFeatureString(features);
     std::cout << out << std::endl;
-  }
-
-  void UpdateStats(const cv::Mat_<uint8_t>& binary_image,
-                   const cv::Mat& next_mat, const cv::Mat& magnitude,
-                   const cv::Mat& orientation) {
-    stats::UpdateCentroidAndOrientation(binary_image, &orientations_,
-                                        &centroids_);
-    constexpr int num_bins = 25;
-    stats::GetHistoAround(binary_image, num_bins, next_mat, &bg_histogram_);
-    // Update magnitude histogram
-    const float magnitude_range[2] = {0, 0.2};
-    stats::UpdateHistogram(binary_image, magnitude, &magnitude_histogram_,
-                           magnitude_range, num_bins);
-    // Update orientation histogram
-    float orientation_range[2];
-    orientation_range[0] = -M_PI;
-    orientation_range[1] = M_PI;
-    stats::UpdateHistogram(binary_image, orientation, &orientation_histogram_,
-                           orientation_range, num_bins);
   }
 
   void NormalizeInternalHistogramCdfs(const cv::Mat& gray_frame,
@@ -262,6 +287,16 @@ class MotionEstimation {
 
     // motion vector orientations
     stats::NormalizeHistogramCdf(orientation_histogram_, motion_orient_cdf);
+  }
+
+  void NormalizeInternalHistogramCdfs(const cv::UMat& gray_frame,
+                                      cv::Mat* x_cent_cdf, cv::Mat* y_cent_cdf,
+                                      cv::Mat* orient_cent_cdf, cv::Mat* bg_cdf,
+                                      cv::Mat* motion_mag_cdf,
+                                      cv::Mat* motion_orient_cdf) {
+    NormalizeInternalHistogramCdfs(gray_frame.getMat(cv::ACCESS_READ),
+                                   x_cent_cdf, y_cent_cdf, orient_cent_cdf,
+                                   bg_cdf, motion_mag_cdf, motion_orient_cdf);
   }
 
   template <typename T = double>
@@ -305,6 +340,38 @@ class MotionEstimation {
   // Histogram for magnitudes of motion vectors
   cv::Mat_<float> magnitude_histogram_;
 };
+
+// template <>
+// template <typename T, typename S>
+// void MotionEstimation<T, S>::UpdateStats<cv::Mat>(const cv::Mat&
+// binary_image,
+//                                                  const cv::Mat& next_mat,
+//                                                  const cv::Mat& magnitude,
+//                                                  const cv::Mat& orientation)
+//                                                  {
+//  stats::UpdateCentroidAndOrientation(binary_image, &orientations_,
+//                                      &centroids_);
+//  constexpr int num_bins = 25;
+//  stats::GetHistoAround(binary_image, num_bins, next_mat, &bg_histogram_);
+//  // Update magnitude histogram
+//  const float magnitude_range[2] = {0, 0.2};
+//  stats::UpdateHistogram(binary_image, magnitude, &magnitude_histogram_,
+//                         magnitude_range, num_bins);
+//  // Update orientation histogram
+//  float orientation_range[2];
+//  orientation_range[0] = -M_PI;
+//  orientation_range[1] = M_PI;
+//  stats::UpdateHistogram(binary_image, orientation, &orientation_histogram_,
+//                         orientation_range, num_bins);
+//}
+
+// template <>
+// void UpdateStats(const cv::UMat& binary_image, const cv::UMat& next_mat,
+//                 const cv::UMat& magnitude, const cv::UMat& orientation) {
+//  UpdateStats(binary_image.getMat(cv::ACCESS_RW),
+//              next_mat.getMat(cv::ACCESS_RW), magnitude.getMat(cv::ACCESS_RW),
+//              orientation.getMat(cv::ACCESS_RW));
+//}
 
 } /* namespace oflow */
 

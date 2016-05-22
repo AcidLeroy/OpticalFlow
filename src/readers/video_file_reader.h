@@ -33,7 +33,17 @@ class VideoFileReader {
       throw std::runtime_error("OPENCV could not open camera or file.");
     }
   };
-  std::shared_ptr<Image<cv::Mat>> ReadFrame();
+  template <typename mat_type>
+  std::shared_ptr<Image<mat_type>> ReadFrame() {
+    mat_type color_frame;
+    auto x = cap_->read(color_frame);
+    if (!x) {
+      return nullptr;
+    }
+    auto gray_frame = std::make_shared<mat_type>();
+    cv::cvtColor(color_frame, *gray_frame, cv::COLOR_BGR2GRAY);
+    return std::make_shared<Image<mat_type>>(Image<mat_type>(gray_frame));
+  }
 
  private:
   std::string filename_;
