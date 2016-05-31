@@ -39,7 +39,7 @@ int main(int argc, const char* argv[]) {
   // oflow::VideoFileReader f(vdofile);
   std::shared_ptr<oflow::VideoFileReader> f(
       new oflow::VideoFileReader(vdofile));
-  oflow::MotionEstimation<oflow::VideoFileReader, cv::Mat> me(f);
+  oflow::MotionEstimation<oflow::VideoFileReader, cv::UMat> me(f);
   std::shared_ptr<oflow::FarneBackFlow> my_flow(new oflow::FarneBackFlow());
   me.EstimateMotion(my_flow);
 }

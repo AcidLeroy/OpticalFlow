@@ -13,6 +13,8 @@
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include "opencv2/highgui.hpp"
+#include "opencv2/videoio.hpp"
 
 #define _USE_MATH_DEFINES
 #include <cmath>
@@ -36,16 +38,18 @@ namespace stats {
 /**
  * Get the histogram for the image around the motion.
  */
-void GetHistoAround(const cv::Mat_<uint8_t>& thresholded_motion, int disk_size,
-                    const cv::Mat& gray_scale_image, cv::Mat* bg_histogram) {
-  cv::Mat dialated;
+template <typename T>
+void GetHistoAround(const T& thresholded_motion, int disk_size,
+                    const T& gray_scale_image, T* bg_histogram) {
+  T dialated;
   // Get disk
-  cv::Mat disk = cv::getStructuringElement(cv::MORPH_ELLIPSE,
-                                           cv::Size(disk_size, disk_size));
+  T disk = cv::getStructuringElement(cv::MORPH_ELLIPSE,
+                                     cv::Size(disk_size, disk_size));
   // Dilate motion to get pixels around motion
   cv::dilate(thresholded_motion, dialated, disk);
-  cv::Mat diff_image = dialated - thresholded_motion;
-  cv::Mat background;
+  T diff_image = dialated - thresholded_motion;
+  diff_image.convertTo(diff_image, CV_8U);
+  T background;
   gray_scale_image.copyTo(background, diff_image);
   // Get histogram of background intensity
   constexpr int num_bins = 25;
@@ -54,9 +58,9 @@ void GetHistoAround(const cv::Mat_<uint8_t>& thresholded_motion, int disk_size,
   bool uniform = true;
   bool accumulate = false;
 
-  cv::Mat hist;
-  cv::calcHist(&background, 1, 0, cv::Mat(), hist, 1, &num_bins, &hist_range,
-               uniform, accumulate);
+  T hist;
+  cv::calcHist(&background, 1, 0, T(), hist, 1, &num_bins, &hist_range, uniform,
+               accumulate);
   if (bg_histogram->empty()) {
     hist.copyTo(*bg_histogram);
   } else {
@@ -106,6 +110,9 @@ void UpdateCentroidAndOrientation(const cv::Mat& thresholded_image,
                                   cv::Range(0, current_centroids.cols)),
                 *centroids);
   }
+
+  // std::cout << "centroids are" << std::endl << current_centroids <<
+  // std::endl;
   std::vector<std::vector<cv::Point>> contours;
   cv::findContours(thresholded_image, contours, cv::RETR_LIST,
                    cv::CHAIN_APPROX_NONE);
@@ -132,7 +139,9 @@ void GetCdf(const cv::Mat& input, cv::Mat* output, int num_bins,
             const float range[2]) {
   bool uniform = true;
   bool accumulate = false;
-  const float* i_range = {range};
+  // This range has to be created to match the histc function in matlab.
+  const float new_range[2] = {range[0], range[1] + num_bins + 1};
+  const float* i_range = {new_range};
   cv::Mat hist;
 
   cv::calcHist(&input, 1, 0, cv::Mat(), hist, 1, &num_bins, &i_range, uniform,
@@ -148,7 +157,9 @@ void GetCentroidCdf(const cv::Mat& centroids, const cv::Mat& gray_frame,
   // Calculate cdf for x
   const float xrange[2] = {1, static_cast<float>(gray_frame.cols)};
   cv::Mat_<float> x_cent = centroids.col(0);
+  //  std::cout << "centroids x= " << std::endl << x_cent << std::endl;
   GetCdf(x_cent, x_cent_cdf, num_bins, xrange);
+  //  std::cout << "cdf x= " << std::endl << *x_cent_cdf << std::endl;
   // Calculate cdf for x
   const float yrange[2] = {1, static_cast<float>(gray_frame.rows)};
   cv::Mat_<float> y_cent = centroids.col(1);
@@ -171,7 +182,7 @@ std::string ConstructFeatureString(
   std::stringstream oss;
   for (auto& mat : feature_vectors) {
     for (size_t i = 0; i < mat->total(); ++i) {
-      oss << mat->at<double>(i) << "\t";
+      oss << mat->at<float>(i) << "\t";
     }
     oss << "1\t";
   }
@@ -215,6 +226,12 @@ void UpdateStats<cv::UMat>(const cv::UMat& binary_image,
                      orientation_histogram);
 }
 
+template <typename T>
+void ShowImage(const std::string& name, const T& image) {
+  cv::namedWindow(name, 1);
+  cv::imshow(name, image);
+}
+
 }  // End namespace stats
 
 template <typename ReaderType, typename mat_type>
@@ -245,6 +262,13 @@ class MotionEstimation {
       cv::threshold(stats.GetMagnitude(), binary_image, 0.25 * max_val, 1,
                     cv::THRESH_BINARY);
 
+      stats::ShowImage("binary", binary_image);
+      stats::ShowImage("current_frame", *current_frame->GetMat());
+      stats::ShowImage("Magnitude", stats.GetMagnitude());
+      stats::ShowImage("Velocity X", stats.GetVx());
+      stats::ShowImage("Velocity Y", stats.GetVy());
+      cv::waitKey(0);
+
       stats::UpdateStats(binary_image, *(next_frame->GetMat()),
                          stats.GetMagnitude(), stats.GetOrientation(),
                          &orientations_, &centroids_, &bg_histogram_,
@@ -264,6 +288,7 @@ class MotionEstimation {
     std::vector<cv::Mat*> features{&x_cent_cdf,      &y_cent_cdf,
                                    &orient_cent_cdf, &bg_cdf,
                                    &motion_mag_cdf,  &motion_orient_cdf};
+    std::cout << "x_cent_cdf is " << std::endl << x_cent_cdf << std::endl;
     std::string out = stats::ConstructFeatureString(features);
     std::cout << out << std::endl;
   }
@@ -340,38 +365,6 @@ class MotionEstimation {
   // Histogram for magnitudes of motion vectors
   cv::Mat_<float> magnitude_histogram_;
 };
-
-// template <>
-// template <typename T, typename S>
-// void MotionEstimation<T, S>::UpdateStats<cv::Mat>(const cv::Mat&
-// binary_image,
-//                                                  const cv::Mat& next_mat,
-//                                                  const cv::Mat& magnitude,
-//                                                  const cv::Mat& orientation)
-//                                                  {
-//  stats::UpdateCentroidAndOrientation(binary_image, &orientations_,
-//                                      &centroids_);
-//  constexpr int num_bins = 25;
-//  stats::GetHistoAround(binary_image, num_bins, next_mat, &bg_histogram_);
-//  // Update magnitude histogram
-//  const float magnitude_range[2] = {0, 0.2};
-//  stats::UpdateHistogram(binary_image, magnitude, &magnitude_histogram_,
-//                         magnitude_range, num_bins);
-//  // Update orientation histogram
-//  float orientation_range[2];
-//  orientation_range[0] = -M_PI;
-//  orientation_range[1] = M_PI;
-//  stats::UpdateHistogram(binary_image, orientation, &orientation_histogram_,
-//                         orientation_range, num_bins);
-//}
-
-// template <>
-// void UpdateStats(const cv::UMat& binary_image, const cv::UMat& next_mat,
-//                 const cv::UMat& magnitude, const cv::UMat& orientation) {
-//  UpdateStats(binary_image.getMat(cv::ACCESS_RW),
-//              next_mat.getMat(cv::ACCESS_RW), magnitude.getMat(cv::ACCESS_RW),
-//              orientation.getMat(cv::ACCESS_RW));
-//}
 
 } /* namespace oflow */
 

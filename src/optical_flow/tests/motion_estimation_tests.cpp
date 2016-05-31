@@ -285,6 +285,19 @@ bool IsEqual(const cv::Mat &a, const cv::Mat &b, double tolerance = 0.0) {
   return cv::countNonZero(a != b) == 0;
 }
 
+TEST(OflowStats, TestGetCdf) {
+  cv::Mat data = (cv::Mat_<float>(1, 9) << 1, 2, 3, 4, 5, 6, 7, 8, 9);
+  cv::Mat output;
+  int num_bins = 3;
+  float max_val = 10;
+  // This range has to be created to match the histc function in matlab.
+  const float range[2] = {0, max_val};
+  GetCdf(data, &output, num_bins, range);
+  cv::Mat expected = (cv::Mat_<float>(3, 1) << 0.44444445, 1, 1);
+  cv::Mat comparison;
+  ASSERT_TRUE(IsEqual(expected, output, 1e-6));
+}
+
 TEST(OflowStats, TestNormalizeHistogramCdf) {
   std::vector<float> hist_data{{1, 2, 3, 4, 5, 6}};
   const cv::Mat hist(1, 6, CV_32F, &hist_data[0]);
@@ -299,8 +312,8 @@ TEST(OflowStats, TestNormalizeHistogramCdf) {
 }
 
 TEST(OflowStats, TestConstructFeatureString) {
-  cv::Mat mat1 = (cv::Mat_<double>(1, 2) << 1.0, 2.0);
-  cv::Mat mat2 = (cv::Mat_<double>(1, 2) << 3, 4);
+  cv::Mat mat1 = (cv::Mat_<float>(1, 2) << 1.0, 2.0);
+  cv::Mat mat2 = (cv::Mat_<float>(1, 2) << 3, 4);
   std::string expected_string("1\t2\t1\t3\t4\t1\t\n");
   std::setprecision(8);
   std::cout << "expected string = " << expected_string << std::endl;

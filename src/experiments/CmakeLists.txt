@@ -22,3 +22,9 @@ add_executable(${app_name}_benchmark tests/${app_name}_benchmark.cpp)
 target_link_libraries(${app_name}_benchmark
   celero
   ${OpenCV_LIBS})
+  
+set(app_name optical_flow_mat_benchmark)  
+add_executable(${app_name} ${app_name}.cpp)
+target_link_libraries(${app_name}
+  celero
+  ${OpenCV_LIBS})
