@@ -41,5 +41,7 @@ int main(int argc, const char* argv[]) {
       new oflow::VideoFileReader(vdofile));
   oflow::MotionEstimation<oflow::VideoFileReader, cv::UMat> me(f);
   std::shared_ptr<oflow::FarneBackFlow> my_flow(new oflow::FarneBackFlow());
-  me.EstimateMotion(my_flow);
+  auto features = me.EstimateMotion(my_flow);
+  std::cout << "features are: " << std::endl
+            << oflow::stats::PrintFeatures(features).str() << std::endl;
 }

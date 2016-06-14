@@ -317,7 +317,7 @@ TEST(OflowStats, TestConstructFeatureString) {
   std::string expected_string("1\t2\t1\t3\t4\t1\t\n");
   std::setprecision(8);
   std::cout << "expected string = " << expected_string << std::endl;
-  std::vector<cv::Mat *> feature_vectors{&mat1, &mat2};
+  std::vector<cv::Mat> feature_vectors{mat1, mat2};
   ASSERT_STREQ(expected_string.c_str(),
                ConstructFeatureString(feature_vectors).c_str());
 }

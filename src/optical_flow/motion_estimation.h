@@ -23,6 +23,7 @@
 #include <vector>
 #include <algorithm>
 #include <typeinfo>
+#include <strstream>
 
 namespace oflow {
 
@@ -178,11 +179,11 @@ void NormalizeHistogramCdf(const cv::Mat& hist, cv::Mat* normalized_hist_cdf) {
 }
 
 std::string ConstructFeatureString(
-    const std::vector<cv::Mat*>& feature_vectors) {
+    const std::vector<cv::Mat>& feature_vectors) {
   std::stringstream oss;
   for (auto& mat : feature_vectors) {
-    for (size_t i = 0; i < mat->total(); ++i) {
-      oss << mat->at<float>(i) << "\t";
+    for (size_t i = 0; i < mat.total(); ++i) {
+      oss << mat.at<float>(i) << "\t";
     }
     oss << "1\t";
   }
@@ -190,8 +191,21 @@ std::string ConstructFeatureString(
   return oss.str();
 }
 
-template <typename mat_type = cv::Mat>
-void UpdateStats(const mat_type& binary_image, const mat_type& next_mat,
+std::ostrstream PrintFeatures(const std::vector<cv::Mat>& feature_vectors) {
+  //	std::vector<cv::Mat> features{x_cent_cdf,      y_cent_cdf,
+  //	                                  orient_cent_cdf, bg_cdf,
+  //	                                  motion_mag_cdf,  motion_orient_cdf};
+  std::vector<std::string> labels{
+      "X Centroid CDF", "Y Centroid CDF",       "Orientation Centroid CDF",
+      "Background CDF", "Motion Magnitude CDF", "Motion Orientation CDF"};
+  std::ostrstream oss;
+  for (size_t i = 0; i < labels.size(); ++i) {
+    oss << labels[i] << " = " << std::endl << feature_vectors[i] << std::endl;
+  }
+  return oss;
+}
+
+void UpdateStats(const cv::Mat& binary_image, const cv::Mat& next_mat,
                  const cv::Mat& magnitude, const cv::Mat& orientation,
                  cv::Mat* orientations, cv::Mat* centroids,
                  cv::Mat* bg_histogram, cv::Mat* magnitude_histogram,
@@ -201,25 +215,40 @@ void UpdateStats(const mat_type& binary_image, const mat_type& next_mat,
   stats::UpdateCentroidAndOrientation(bin, orientations, centroids);
   constexpr int num_bins = 25;
   stats::GetHistoAround(binary_image, num_bins, next_mat, bg_histogram);
+
   // Update magnitude histogram
-  const float magnitude_range[2] = {0, 0.2};
-  stats::UpdateHistogram(binary_image, magnitude, magnitude_histogram,
-                         magnitude_range, num_bins);
+  const float magnitude_range[2] = {0.0, 256};
+  const float* i_range = {magnitude_range};
+  //  std::cout << "Magnitude = " << std::endl << magnitude << std::endl;
+  double min_val;
+  double max_val;
+  cv::Point min_loc;
+  cv::Point max_loc;
+  //  cv::minMaxLoc(orientation, &min_val, &max_val, &min_loc, &max_loc);
+  //  std::cout << "orientation min val = " << min_val << " max val " << max_val
+  //            << std::endl;
+
+  //  cv::Mat hist;
+  //  cv::calcHist(&magnitude, 1, 0, cv::Mat(), hist, 1, &num_bins, &i_range,
+  //  true,
+  //               false);
+  //  std::cout << "hist = " << std::endl << hist << std::endl;
+
+  stats::UpdateHistogram(bin, magnitude, magnitude_histogram, magnitude_range,
+                         num_bins);
   // Update orientation histogram
   float orientation_range[2];
-  orientation_range[0] = -M_PI;
+  orientation_range[0] = 0;
   orientation_range[1] = M_PI;
   stats::UpdateHistogram(binary_image, orientation, orientation_histogram,
                          orientation_range, num_bins);
 }
 
-template <>
-void UpdateStats<cv::UMat>(const cv::UMat& binary_image,
-                           const cv::UMat& next_mat, const cv::Mat& magnitude,
-                           const cv::Mat& orientation, cv::Mat* orientations,
-                           cv::Mat* centroids, cv::Mat* bg_histogram,
-                           cv::Mat* magnitude_histogram,
-                           cv::Mat* orientation_histogram) {
+void UpdateStats(const cv::UMat& binary_image, const cv::UMat& next_mat,
+                 const cv::Mat& magnitude, const cv::Mat& orientation,
+                 cv::Mat* orientations, cv::Mat* centroids,
+                 cv::Mat* bg_histogram, cv::Mat* magnitude_histogram,
+                 cv::Mat* orientation_histogram) {
   stats::UpdateStats(binary_image.getMat(cv::ACCESS_RW),
                      next_mat.getMat(cv::ACCESS_RW), magnitude, orientation,
                      orientations, centroids, bg_histogram, magnitude_histogram,
@@ -241,7 +270,7 @@ class MotionEstimation {
       : reader_(reader){};
 
   template <typename OpticalFlowType>
-  void EstimateMotion(std::shared_ptr<OpticalFlowType> flow) {
+  std::vector<cv::Mat> EstimateMotion(std::shared_ptr<OpticalFlowType> flow) {
     auto current_frame = reader_->template ReadFrame<mat_type>();
     if (current_frame == nullptr)
       throw MotionEstimationException("There are no frames to read!");
@@ -259,15 +288,15 @@ class MotionEstimation {
       cv::Point max_loc;
       cv::minMaxLoc(stats.GetMagnitude(), &min_val, &max_val, &min_loc,
                     &max_loc);
-      cv::threshold(stats.GetMagnitude(), binary_image, 0.25 * max_val, 1,
+      cv::threshold(stats.GetMagnitude(), binary_image, 0.1 * max_val, 1,
                     cv::THRESH_BINARY);
 
-      stats::ShowImage("binary", binary_image);
-      stats::ShowImage("current_frame", *current_frame->GetMat());
-      stats::ShowImage("Magnitude", stats.GetMagnitude());
-      stats::ShowImage("Velocity X", stats.GetVx());
-      stats::ShowImage("Velocity Y", stats.GetVy());
-      cv::waitKey(0);
+      //      stats::ShowImage("binary", binary_image);
+      //      stats::ShowImage("current_frame", *current_frame->GetMat());
+      //      stats::ShowImage("Magnitude", stats.GetMagnitude());
+      //      stats::ShowImage("Velocity X", stats.GetVx());
+      //      stats::ShowImage("Velocity Y", stats.GetVy());
+      //      cv::waitKey(0);
 
       stats::UpdateStats(binary_image, *(next_frame->GetMat()),
                          stats.GetMagnitude(), stats.GetOrientation(),
@@ -278,19 +307,21 @@ class MotionEstimation {
       next_frame = reader_->template ReadFrame<mat_type>();
       if (next_frame == nullptr) break;
     }
+    //    std::cout << "x centroids = " << std::endl << centroids_ << std::endl;
     // Collect cdfs from video
     cv::Mat x_cent_cdf, y_cent_cdf, orient_cent_cdf, bg_cdf, motion_mag_cdf,
         motion_orient_cdf;
+
     NormalizeInternalHistogramCdfs(*(current_frame->GetMat()), &x_cent_cdf,
                                    &y_cent_cdf, &orient_cent_cdf, &bg_cdf,
                                    &motion_mag_cdf, &motion_orient_cdf);
 
-    std::vector<cv::Mat*> features{&x_cent_cdf,      &y_cent_cdf,
-                                   &orient_cent_cdf, &bg_cdf,
-                                   &motion_mag_cdf,  &motion_orient_cdf};
-    std::cout << "x_cent_cdf is " << std::endl << x_cent_cdf << std::endl;
+    std::vector<cv::Mat> features{x_cent_cdf,      y_cent_cdf,
+                                  orient_cent_cdf, bg_cdf,
+                                  motion_mag_cdf,  motion_orient_cdf};
+
     std::string out = stats::ConstructFeatureString(features);
-    std::cout << out << std::endl;
+    return features;
   }
 
   void NormalizeInternalHistogramCdfs(const cv::Mat& gray_frame,
