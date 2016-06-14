@@ -3,7 +3,10 @@ function features = extract_feature_vectors(features_to_extract, data_dir)
 % later classification. 
 % parameters: 
 %    features_to_extract - either 'typing' or 'writing'
-%    data_dir - This is the directory where the videos are found. 
+%    data_dir - This is the directory where the feature videos are found. 
+%
+% Example: 
+%     extract_feature_vectors('typing', '/Users/cody/Dropbox/CodyShared/PreProposal_AOLMEFall2015/ActivityClassifier/data')
 
 switch features_to_extract 
    case 'typing'
@@ -31,18 +34,22 @@ switch features_to_extract
       feature_name = 'Writing';  
   
    otherwise
-      error('Unknown feature "%s" to extract! Aborting...', feature_to_extract); 
+      error('Unknown feature "%s" to extract! Please choose "typing" or "writing". Aborting...', features_to_extract); 
 
 end
 
 ClassVectors = [];
-ClassVectors = extract_features(VideoList, ClassVectors, sprintf('%s', feature_name), 0);
-ClassVectors = extract_features(NoActionVideoList, ClassVectors, sprintf('No%s', feature_name), 1);
+CellVectors = {'CenX_CDF', 'CenY_CDF', 'Orient_CDF', 'Histo_CDF', 'Motion_mag_CDF', 'Motion_orient_CDF', 'Classification'};
+[ClassVectors, CellVectors] = extract_features(VideoList, ClassVectors, CellVectors, sprintf('%s', feature_name), 0);
+[ClassVectors, CellVectors] = extract_features(NoActionVideoList, ClassVectors, CellVectors, sprintf('No%s', feature_name), 1);
 
-filename = sprintf('VideoHistos_%s', feature_name); 
-save(filename, 'ClassVectors', '-ascii', '-tabs');    
+filename = sprintf('VideoHistos_%s_vectors.csv', feature_name); 
+save(filename, 'ClassVectors', '-ascii', '-tabs'); 
+filename = sprintf('VideoHistos_%s_cells.csv', feature_name); 
+cell2csv(filename, CellVectors, ',')
+features = CellVectors;
 
-function ClassVectors = extract_features(VideoList, ClassVectors, filename, classification)
+function [ClassVectors, CellVectors] = extract_features(VideoList, ClassVectors, CellVectors, filename, classification)
    method = 'HS';
    for i = 1:length(VideoList)
       Video_str  = char(VideoList{i});
@@ -70,6 +77,13 @@ function ClassVectors = extract_features(VideoList, ClassVectors, filename, clas
                       transpose(Motion_orient_CDF(:)), ...
                       classification];
       ClassVectors = [ClassVectors; NewVector];
+      CellVectors = vertcat(CellVectors, {transpose(CenX_CDF(:)), ...
+                      transpose(CenY_CDF(:)), ...
+                      transpose(Orient_CDF(:)), ...
+                      transpose(Histo_CDF(:)), ...
+                      transpose(Motion_mag_CDF(:)), ...
+                      transpose(Motion_orient_CDF(:)), ...
+                      classification});
    end
 end
 
