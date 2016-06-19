@@ -1,98 +1,76 @@
 # Clean up all variables and functions:
 rm(list=ls())
-
 library(class)
 library(e1071)
 
 # Function definitions:
 
-# Assumptions:
-#   VideoHists contains row-vectors to be classified.
-#   Last column of VideoHists is the class (-1 or +1).
+# Plots a particular column in the vector with a given label name
+# dataframe - This is the data frame that contains a list for each respective CDF
+# column_name - This is the column for which to plot the box and whiskers for all the values in this class. 
+# x_label - This is the label for the type of data being plotted in the CDF
+PlotClass <- function(dataframe, column_name, x_label){
+  dataset = dataframe[[column_name]]
+  mat = do.call(rbind, dataset)
+  boxplot(mat, use.cols = TRUE, main=column_name, xlab=x_label, ylab='CDF')
+}
 
+# Returns all rows that match a particular classification type. I.e. if you want to get 
+# all values in the data frame that were classified as a 1, you would simply call
+# GetClassification(df 1). 
+GetClassification <- function(dataframe, classification){
+  class_tf = unlist(lapply(dataframe$Classification, function(x) x == classification))
+  return (sapply(dataframe, function(x) x[class_tf], simplify=FALSE))
+}
+
+# Plot CDFs found in the dataframe. 
 PlotHistsClasses <- function(VideoHists){
-  # Visualize the different classes
-  d<-dim(VideoHists);
-  NumOfVars <- d[2];
-  
-  # Select class=1 or -1
-  VideoHists1 <- VideoHists[which(VideoHists[, NumOfVars] == +1), seq(1:(NumOfVars-1))];
-  VideoHists2 <- VideoHists[which(VideoHists[, NumOfVars] == +2), seq(1:(NumOfVars-1))];
+  VideoHists1 =  GetClassification(VideoHists, 1)
+  VideoHists2 =  GetClassification(VideoHists, 2)
   
   library(ggplot2);
   par(mfrow=c(6,2));
   par(mar=c(1,1,1,1))
-  plot(melt(VideoHists1[, seq(1,25)]),
-       main="1: CenX CDF", 
-       xlab="x", 
-       ylab="CDF");
-  plot(melt(VideoHists2[, seq(1,25)]),
-       main="2: CenX CDF", 
-       xlab="x", 
-       ylab="CDF");
   
-  plot(melt(VideoHists1[, seq(25+1, 25+25)]),
-       main="1: CenY CDF", 
-       xlab="y", 
-       ylab="CDF");
-  plot(melt(VideoHists2[, seq(25+1, 25+25)]),
-       main="2: CenY CDF", 
-       xlab="y", 
-       ylab="CDF");
-  
-  plot(melt(VideoHists1[, seq(50+1,50+25)]),
-       main="1: Orient CDF", 
-       xlab="Angle", 
-       ylab="CDF");
-  plot(melt(VideoHists2[, seq(50+1,50+25)]),
-       main="2: Orient CDF", 
-       xlab="Angle", 
-       ylab="CDF");  
-  
-  plot(melt(VideoHists1[, seq(75+1,75+25)]),
-       main="1: Orient CDF", 
-       xlab="Angle", 
-       ylab="CDF");
-  plot(melt(VideoHists2[, seq(75+1,75+25)]),
-       main="2: Orient CDF", 
-       xlab="Angle", 
-       ylab="CDF"); 
-  
-  plot(melt(VideoHists1[, seq(100+1,100+25)]),
-       main="1: Orient CDF", 
-       xlab="Angle", 
-       ylab="CDF");
-  plot(melt(VideoHists2[, seq(100+1,100+25)]),
-       main="2: Orient CDF", 
-       xlab="Angle", 
-       ylab="CDF"); 
-  
-  plot(melt(VideoHists1[, seq(125+1,125+25)]),
-       main="1: Orient CDF", 
-       xlab="Angle", 
-       ylab="CDF");
-  plot(melt(VideoHists2[, seq(125+1,125+25)]),
-       main="2: Orient CDF", 
-       xlab="Angle", 
-       ylab="CDF"); 
+  no_plot = "Classification"
+  x_labels = c('x', 'y', 'angle', 'angle', 'motion magnitude', 'angle')
+  idx = 1; 
+  for( i in names(VideoHists[!names(VideoHists) %in% no_plot])) {
+    PlotClass(VideoHists1, i, x_labels[idx])
+    PlotClass(VideoHists2, i, x_labels[idx])
+    idx = idx + 1
+  }
+
+}
+
+
+# Get all columns except for the ones specified in excluded_columns. Returns the modified 
+# data frame
+GetAllExcept <- function(df, excluded_columns) {
+  return (df[names(df[!names(df) %in% excluded_columns])])
+}
+
+# Combine features of that dataframe into a matrix so that the features
+# can easily processed by svm and knn.
+CombineFeatures <- function(df, features_to_combine) {
+   result = do.call(cbind, df[features_to_combine])
+   return (apply(result, 1, unlist))
 }
 
 FeatureSelection <- function(VideoHists){
   # Selects features that produce different variables:
-  d<-dim(VideoHists);
-  NumOfVars <- d[2];
   
-  # Select class=1 or -1
-  VideoHists1 <- VideoHists[which(VideoHists[, NumOfVars] == +1), seq(1:(NumOfVars-1))];
-  VideoHists2 <- VideoHists[which(VideoHists[, NumOfVars] == +2), seq(1:(NumOfVars-1))];
+  VideoHists1 =  GetClassification(VideoHists, 1)
+  VideoHists2 =  GetClassification(VideoHists, 2)
   
   # Go through and construct only the variables that are different:
-  ValidVars <- 0;
-  TestedVideoHists = VideoHists;
-  for (i in 1:(NumOfVars-1)) {
+  ValidVars = c()
+
+  # Loop through all variables except classifcation
+  for( i in names(VideoHists[!names(VideoHists) %in% "Classification"])) {
     # Compare every variable:
-    x = VideoHists1[,i];
-    y = VideoHists2[,i];
+    x = unlist(VideoHists1[[i]]);
+    y = unlist(VideoHists2[[i]]);
     
     # Nothing to do if same mean:
     if (abs(mean(x)-mean(y)) > 1.0e-6) {
@@ -101,21 +79,15 @@ FeatureSelection <- function(VideoHists){
       if (w$p.value < 0.05) { # 0.02
         # They are different.
         # Use this variable.
-        ValidVars <- ValidVars + 1;
-        TestedVideoHists[, ValidVars] <- VideoHists[,i]; 
+        ValidVars = c(ValidVars, i)
       } 
     }
   }
-    
-  # Attach the classification results at the end:
-  ValidVars <- ValidVars + 1;
-  TestedVideoHists[, ValidVars] <- VideoHists[, NumOfVars];
   
-  # Eliminate unused variables:
-  TestedVideoHists <- TestedVideoHists[, 1:ValidVars];
-  
-  # Return the variable:
-  TestedVideoHists
+  # Attach classification
+  ValidVars = c(ValidVars, "Classification")
+  return (VideoHists[ValidVars])
+ 
 }
 
 PlotFeatureClasses <- function(VideoHists){
@@ -141,23 +113,28 @@ PlotFeatureClasses <- function(VideoHists){
 }
 
 ClassifyFeatures <- function(VideoHists){
-  dims <- dim(VideoHists);
-  NoOfSamples <- dims[1];
-  NoOfVars    <- dims[2];
+  NoOfSamples <- length(VideoHists$Classification)
   
   # Build a factor of the correct classification:
-  All_cl <- VideoHists[, NoOfVars];
+  All_cl <- unlist(VideoHists$Classification);
   
   # Store 1 for wrong classification and 0 for correct.
   knnResult <- rep(1, times=NoOfSamples);
   svmResult <- rep(1, times=NoOfSamples);
   
+  # Remove classification
+  features = GetAllExcept(VideoHists, "Classification")
+  
   # Create a leave one out classification approach
   for(i in 1:NoOfSamples)
   {
     # Set up training and testing data:
-    trainData = VideoHists[-i, 1:NoOfVars-1]; # Remove i.
-    testData  = VideoHists[i,  1:NoOfVars-1]; # One left out.
+    trainData = lapply(features, function(x) x[-i]) # Remove i.
+    testData  = lapply(features, function(x) x[i]) # One left out.
+    
+    #Combine data
+    trainData = t(CombineFeatures(trainData, names(trainData)))
+    testData = t(CombineFeatures(testData, names(testData)))
     
     # Prepare the labels for the training set:
     #  Optimal: k=1
@@ -172,10 +149,8 @@ ClassifyFeatures <- function(VideoHists){
     #print(round(svmResult));
     
     #***** Without tuning *****#
-    model <- svm(All_cl[-i] ~ ., data=trainData);
+    model <- svm(All_cl[-i] ~ ., data=trainData, scale=FALSE);
     svmResult[i] <- predict(model, testData);
-    
-    
     
   }
   
@@ -192,13 +167,12 @@ ClassifyFeatures <- function(VideoHists){
 }
 
 # Read the table
-#VideoHists = read.table("E:/VJ/AOLME/PreProposal_AOLMEFall2015/ActivityClassifier/data/FeatureVectorsOutput/VideoHistos_WriVsNoWri.txt", header=F);
-
-#VideoHists = read.table("C:/Users/user/Dropbox/ICIP2016/VideoHistos_TrackVsZoom.txt", header=F);
-#VideoHists = read.table("C:/Users/user/Dropbox/ICIP2016/VideoHistos_ZoomVsStat.txt", header=F);
-VideoHists = read.table("../FeatureVectors/VideoHistos_WriVsNoWri.txt", header=F);
+#VideoHists = read.table("/Users/cody/Repos/OpticalFlow/src/matlab/VideoHistos_Typing_cells.csv", header=F);
+source("load_video_features.r")
+VideoHists = LoadVideoFeatures("/Users/cody/Repos/OpticalFlow/src/matlab/VideoHistos_Typing_cells.csv")
 # Convert classification results to 1-2 instead of 0-1
-VideoHists[, 151] <- VideoHists[, 151] + 1;
+#VideoHists[, 151] <- VideoHists[, 151] + 1;
+VideoHists$Classification = lapply(VideoHists$Classification, function(x) x + 1)
 
 # We want to visualize the CDF plots.
 library(reshape2);
