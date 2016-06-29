@@ -17,6 +17,8 @@
 int main(int argc, const char* argv[]) {
   const char* keys =
       "{ h help           |                 | print help message }"
+      "{ c classification | 0               | classification of video being "
+      "processed }"
       "{ v video          | test.mov        | use video as input }";
 
   cv::CommandLineParser cmd(argc, argv, keys);
@@ -29,7 +31,9 @@ int main(int argc, const char* argv[]) {
   }
 
   std::string vdofile = cmd.get<std::string>("video");
-  std::cout << "vdofile = " << vdofile << std::endl;
+  // std::cout << "vdofile = " << vdofile << std::endl;
+  int classification = cmd.get<int>("classification");
+  // std::cout << "Classification is : " << classification << std::endl;
 
   if (!cmd.check()) {
     cmd.printErrors();
@@ -39,9 +43,10 @@ int main(int argc, const char* argv[]) {
   // oflow::VideoFileReader f(vdofile);
   std::shared_ptr<oflow::VideoFileReader> f(
       new oflow::VideoFileReader(vdofile));
-  oflow::MotionEstimation<oflow::VideoFileReader, cv::UMat> me(f);
+  typedef cv::UMat img_type;
+  oflow::MotionEstimation<oflow::VideoFileReader, img_type> me(f);
+  // std::shared_ptr<oflow::FarneBackFlow> my_flow(new oflow::FarneBackFlow());
   std::shared_ptr<oflow::FarneBackFlow> my_flow(new oflow::FarneBackFlow());
   auto features = me.EstimateMotion(my_flow);
-  std::cout << "features are: " << std::endl
-            << oflow::stats::PrintFeatures(features).str() << std::endl;
+  std::cout << oflow::stats::PrintFeatures(features, classification);
 }

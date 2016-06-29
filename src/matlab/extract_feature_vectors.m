@@ -12,7 +12,7 @@ switch features_to_extract
    case 'typing'
       % Define the videos:
       Dir = strcat(data_dir ,'/typing/Cropped/');
-      Videos = {'seg1.mov','seg4.mov', 'seg8.mov', 'seg9.mov', 'seg19.mov'};
+      Videos = {'seg_a.mp4', 'seg_b.mp4', 'seg1.mov','seg4.mov', 'seg8.mov', 'seg9.mov', 'seg19.mov', };
       VideoList = strcat(Dir, Videos); 
 
       NoActionDir = strcat(data_dir, '/notyping/Cropped/');
@@ -40,8 +40,8 @@ end
 
 ClassVectors = [];
 CellVectors = {'CenX_CDF', 'CenY_CDF', 'Orient_CDF', 'Histo_CDF', 'Motion_mag_CDF', 'Motion_orient_CDF', 'Classification'};
-[ClassVectors, CellVectors] = extract_features(VideoList, ClassVectors, CellVectors, sprintf('%s', feature_name), 0);
-[ClassVectors, CellVectors] = extract_features(NoActionVideoList, ClassVectors, CellVectors, sprintf('No%s', feature_name), 1);
+[ClassVectors, CellVectors] = extract_features(VideoList, ClassVectors, CellVectors, sprintf('%s', feature_name), 1);
+[ClassVectors, CellVectors] = extract_features(NoActionVideoList, ClassVectors, CellVectors, sprintf('No%s', feature_name), 2);
 
 filename = sprintf('VideoHistos_%s_vectors.csv', feature_name); 
 save(filename, 'ClassVectors', '-ascii', '-tabs'); 
@@ -64,9 +64,9 @@ function [ClassVectors, CellVectors] = extract_features(VideoList, ClassVectors,
       loc  = strfind (Video_str, '.mp4');
       name = sprintf('%s%s.mat', filename, Video_str(1:loc-1)); 
 
-      eval(sprintf('save %s %s %s %s %s %s %s', name, ...
-                   'CenX_CDF', 'CenY_CDF', 'Orient_CDF', 'Histo_CDF', ...
-                   'Motion_mag_CDF', 'Motion_orient_CDF'));
+%       eval(sprintf('save %s %s %s %s %s %s %s', name, ...
+%                    'CenX_CDF', 'CenY_CDF', 'Orient_CDF', 'Histo_CDF', ...
+%                    'Motion_mag_CDF', 'Motion_orient_CDF'));
 
       % Update ClassVectors
       NewVector    = [transpose(CenX_CDF(:)), ...

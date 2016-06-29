@@ -10,6 +10,7 @@
 
 #include "optical_flow.h"
 #include "vector_statistics.h"
+#include "../utilities/utilities.h"
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -69,6 +70,12 @@ void GetHistoAround(const T& thresholded_motion, int disk_size,
   }
 }
 
+template <typename T>
+void ShowImage(const std::string& name, const T& image) {
+  cv::namedWindow(name, 1);
+  cv::imshow(name, image);
+}
+
 void UpdateHistogram(const cv::Mat_<uint8_t>& thresholded_image,
                      const cv::Mat& intensities, cv::Mat* histogram,
                      const float range[2], int num_bins) {
@@ -78,6 +85,8 @@ void UpdateHistogram(const cv::Mat_<uint8_t>& thresholded_image,
   bool accumulate = false;
   cv::Mat masked_image;
   intensities.copyTo(masked_image, thresholded_image);
+  //  ShowImage("Masked Image", masked_image);
+  //  cv::waitKey(0);
 
   cv::Mat hist;
   cv::calcHist(&masked_image, 1, 0, cv::Mat(), hist, 1, &num_bins, &hist_range,
@@ -155,13 +164,9 @@ void GetCentroidCdf(const cv::Mat& centroids, const cv::Mat& gray_frame,
                     cv::Mat* x_cent_cdf, cv::Mat* y_cent_cdf) {
   int num_bins = 25;
 
-  // Calculate cdf for x
   const float xrange[2] = {1, static_cast<float>(gray_frame.cols)};
   cv::Mat_<float> x_cent = centroids.col(0);
-  //  std::cout << "centroids x= " << std::endl << x_cent << std::endl;
   GetCdf(x_cent, x_cent_cdf, num_bins, xrange);
-  //  std::cout << "cdf x= " << std::endl << *x_cent_cdf << std::endl;
-  // Calculate cdf for x
   const float yrange[2] = {1, static_cast<float>(gray_frame.rows)};
   cv::Mat_<float> y_cent = centroids.col(1);
   GetCdf(y_cent, y_cent_cdf, num_bins, yrange);
@@ -169,7 +174,7 @@ void GetCentroidCdf(const cv::Mat& centroids, const cv::Mat& gray_frame,
 
 void GetOrientationCdf(const cv::Mat& orientation, cv::Mat* orient_cent_cdf) {
   int num_bins = 25;
-  const float xrange[2] = {-90, 90};
+  const float xrange[2] = {0, 180};
   GetCdf(orientation, orient_cent_cdf, num_bins, xrange);
 }
 
@@ -191,18 +196,41 @@ std::string ConstructFeatureString(
   return oss.str();
 }
 
-std::ostrstream PrintFeatures(const std::vector<cv::Mat>& feature_vectors) {
-  //	std::vector<cv::Mat> features{x_cent_cdf,      y_cent_cdf,
-  //	                                  orient_cent_cdf, bg_cdf,
-  //	                                  motion_mag_cdf,  motion_orient_cdf};
-  std::vector<std::string> labels{
-      "X Centroid CDF", "Y Centroid CDF",       "Orientation Centroid CDF",
-      "Background CDF", "Motion Magnitude CDF", "Motion Orientation CDF"};
+std::vector<std::string> GetLabels() {
+  std::vector<std::string> labels{"CenX_CDF",       "CenY_CDF",
+                                  "Orient_CDF",     "Histo_CDF",
+                                  "Motion_mag_CDF", "Motion_orient_CDF"};
+  return labels;
+}
+
+std::ostrstream PrintFeature(const cv::Mat& feature) {
   std::ostrstream oss;
-  for (size_t i = 0; i < labels.size(); ++i) {
-    oss << labels[i] << " = " << std::endl << feature_vectors[i] << std::endl;
+  for (size_t i = 0; i < feature.total(); ++i) {
+    oss << feature.at<float>(i) << " ";
   }
   return oss;
+}
+
+std::string PrintFeatures(const std::vector<cv::Mat>& feature_vectors,
+                          int classification) {
+  auto labels = GetLabels();
+  std::string oss;
+  for (size_t i = 0; i < feature_vectors.size(); ++i) {
+    oss += cv_utils::PrintMatVector(feature_vectors[i]) + ",";
+  }
+
+  oss += std::to_string(classification) + '\n';
+
+  return oss;
+}
+
+void PrintMinMax(const cv::Mat& mat, const std::string& name) {
+  auto const min_max = cv_utils::GetMinMax(mat);
+  std::cout << name << " min = " << min_max[0] << " max = " << min_max[1]
+            << std::endl;
+}
+void PrintMinMax(const cv::UMat& mat, const std::string& name) {
+  PrintMinMax(mat.getMat(cv::ACCESS_RW), name);
 }
 
 void UpdateStats(const cv::Mat& binary_image, const cv::Mat& next_mat,
@@ -211,35 +239,27 @@ void UpdateStats(const cv::Mat& binary_image, const cv::Mat& next_mat,
                  cv::Mat* bg_histogram, cv::Mat* magnitude_histogram,
                  cv::Mat* orientation_histogram) {
   cv::Mat bin;
+  stats::ShowImage("bin before", binary_image);
+  stats::PrintMinMax(binary_image, "bin before ");
+
   binary_image.convertTo(bin, CV_8U);
+  stats::PrintMinMax(bin, "bin after ");
+
   stats::UpdateCentroidAndOrientation(bin, orientations, centroids);
   constexpr int num_bins = 25;
   stats::GetHistoAround(binary_image, num_bins, next_mat, bg_histogram);
 
+  const float magnitude_range[2] = {0, 1};
   // Update magnitude histogram
-  const float magnitude_range[2] = {0.0, 256};
-  const float* i_range = {magnitude_range};
-  //  std::cout << "Magnitude = " << std::endl << magnitude << std::endl;
-  double min_val;
-  double max_val;
-  cv::Point min_loc;
-  cv::Point max_loc;
-  //  cv::minMaxLoc(orientation, &min_val, &max_val, &min_loc, &max_loc);
-  //  std::cout << "orientation min val = " << min_val << " max val " << max_val
-  //            << std::endl;
-
-  //  cv::Mat hist;
-  //  cv::calcHist(&magnitude, 1, 0, cv::Mat(), hist, 1, &num_bins, &i_range,
-  //  true,
-  //               false);
-  //  std::cout << "hist = " << std::endl << hist << std::endl;
-
   stats::UpdateHistogram(bin, magnitude, magnitude_histogram, magnitude_range,
                          num_bins);
+  stats::ShowImage("bin after", bin);
+  cv::waitKey(0);
   // Update orientation histogram
   float orientation_range[2];
   orientation_range[0] = 0;
   orientation_range[1] = M_PI;
+
   stats::UpdateHistogram(binary_image, orientation, orientation_histogram,
                          orientation_range, num_bins);
 }
@@ -253,12 +273,6 @@ void UpdateStats(const cv::UMat& binary_image, const cv::UMat& next_mat,
                      next_mat.getMat(cv::ACCESS_RW), magnitude, orientation,
                      orientations, centroids, bg_histogram, magnitude_histogram,
                      orientation_histogram);
-}
-
-template <typename T>
-void ShowImage(const std::string& name, const T& image) {
-  cv::namedWindow(name, 1);
-  cv::imshow(name, image);
 }
 
 }  // End namespace stats
@@ -281,15 +295,12 @@ class MotionEstimation {
     while (1) {
       OpticalFlow<cv::Mat> stats =
           flow->CalculateVectors(*current_frame, *next_frame);
-      mat_type binary_image;
-      double min_val;
-      double max_val;
-      cv::Point min_loc;
-      cv::Point max_loc;
-      cv::minMaxLoc(stats.GetMagnitude(), &min_val, &max_val, &min_loc,
-                    &max_loc);
-      cv::threshold(stats.GetMagnitude(), binary_image, 0.1 * max_val, 1,
+      mat_type binary_image = mat_type((next_frame->GetMat())->rows,
+                                       (next_frame->GetMat())->cols, CV_8U);
+      auto min_max = cv_utils::GetMinMax(stats.GetMagnitude());
+      cv::threshold(stats.GetMagnitude(), binary_image, 0.1 * min_max[1], 1,
                     cv::THRESH_BINARY);
+      stats::PrintMinMax(binary_image, "binary image");
 
       //      stats::ShowImage("binary", binary_image);
       //      stats::ShowImage("current_frame", *current_frame->GetMat());
@@ -312,6 +323,8 @@ class MotionEstimation {
     cv::Mat x_cent_cdf, y_cent_cdf, orient_cent_cdf, bg_cdf, motion_mag_cdf,
         motion_orient_cdf;
 
+    std::cout << "Magnitude Histogram " << magnitude_histogram_ << std::endl;
+
     NormalizeInternalHistogramCdfs(*(current_frame->GetMat()), &x_cent_cdf,
                                    &y_cent_cdf, &orient_cent_cdf, &bg_cdf,
                                    &motion_mag_cdf, &motion_orient_cdf);
@@ -320,7 +333,6 @@ class MotionEstimation {
                                   orient_cent_cdf, bg_cdf,
                                   motion_mag_cdf,  motion_orient_cdf};
 
-    std::string out = stats::ConstructFeatureString(features);
     return features;
   }
 

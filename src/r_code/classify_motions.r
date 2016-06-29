@@ -138,19 +138,19 @@ ClassifyFeatures <- function(VideoHists){
     
     # Prepare the labels for the training set:
     #  Optimal: k=1
-    knnResult[i] <- knn (trainData, testData, All_cl[-i], k=3); # 3
+    knnResult[i] <- knn (trainData, testData, All_cl[-i], k=4); # 3
     
     #**** With tuning ****#
-    #print(All_cl[-i])
-    #tune.out=tune(svm,trainData,All_cl[-i],kernel="linear",ranges=list(cost=c(0.001, 0.01, 0.1, 1,5,10,100)))
-    #tune.out=tune(svm,All_cl[-i] ~ .,data=trainData,kernel="linear",ranges=list(cost=c(0.001, 0.01, 0.1, 1,5,10,100)))
-    #svmResult[i] <- predict(tune.out$best.model, testData);
+    tune.out=tune(svm, trainData, All_cl[-i], , kernel="linear", ranges=list(cost=c(0.0001, 0.001, 0.01, 0.1, 1, 5, 10, 100, 10000)) , scale=FALSE)
+    svmResult[i] <- predict(tune.out$best.model, testData);
     #print(All_cl);
-    #print(round(svmResult));
+    cat("SVM result =  ", round(svmResult), "\n");
+    cat("KNN result =  ", knnResult, "\n")
+    
     
     #***** Without tuning *****#
-    model <- svm(All_cl[-i] ~ ., data=trainData, scale=FALSE);
-    svmResult[i] <- predict(model, testData);
+#    model <- svm(All_cl[-i] ~ ., data=trainData, scale=FALSE);
+#    svmResult[i] <- predict(model, testData);
     
   }
   
@@ -162,6 +162,7 @@ ClassifyFeatures <- function(VideoHists){
         
   cat("Confusion Matrix: knn");
   print(table(All_cl, knnResult));
+  
   cat("Confusion Matrix: SVM");
   print(table(All_cl, round(svmResult)));
 }
@@ -169,10 +170,14 @@ ClassifyFeatures <- function(VideoHists){
 # Read the table
 #VideoHists = read.table("/Users/cody/Repos/OpticalFlow/src/matlab/VideoHistos_Typing_cells.csv", header=F);
 source("load_video_features.r")
-VideoHists = LoadVideoFeatures("/Users/cody/Repos/OpticalFlow/src/matlab/VideoHistos_Typing_cells.csv")
-# Convert classification results to 1-2 instead of 0-1
-#VideoHists[, 151] <- VideoHists[, 151] + 1;
-VideoHists$Classification = lapply(VideoHists$Classification, function(x) x + 1)
+
+list.of.packages <- c("ggplot2", "reshape2", "e1071", "class")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+
+#VideoHists = LoadVideoFeatures("/Users/cody/Repos/OpticalFlow/src/matlab/VideoHistos_Typing_cells.csv")
+VideoHists = LoadVideoFeatures("/Users/cody/Repos/OpticalFlow/build/bin/test.txt")
 
 # We want to visualize the CDF plots.
 library(reshape2);
@@ -182,6 +187,7 @@ PlotHistsClasses(VideoHists)
 
 # Select the features:
 ExtractedFeatures <- FeatureSelection(VideoHists)
+#ExtractedFeatures <- VideoHists[c("Motion_mag_CDF", "Classification")]
   
 # Plot extracted features:
 #PlotFeatureClasses(ExtractedFeatures)

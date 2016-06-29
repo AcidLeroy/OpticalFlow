@@ -13,7 +13,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include "opencv2/video/tracking.hpp"
 #include <array>
-
+#include <iostream>
 #include <vector>
 
 namespace oflow {
@@ -39,6 +39,7 @@ static OpticalFlow<cv::Mat> GetOpticalFlow(const mat_type& flow) {
         orient.at<float>(y, x) = 0;
       }
     }
+  cv::normalize(mag, mag, 0, 1, cv::NORM_MINMAX);
   return OpticalFlow<cv::Mat>(vx, vy, orient, mag);
 }
 
@@ -62,8 +63,16 @@ class FarneBackFlow {
     // Assume we are always called with both images
     if (previous_mat != nullptr && next_mat != nullptr) {
       mat_type uflow;
-      cv::calcOpticalFlowFarneback(*previous_mat, *next_mat, uflow, 0.5, 3, 5,
-                                   3, 5, 1.1, 0);
+      const double pyr_scale = 0.5;
+      const int levels = 3;
+      const int win_size = 15;
+      const int iterations = 3;
+      const int poly_n = 5;
+      const double poly_sigma = 1.1;
+      const int flags = 0;
+      cv::calcOpticalFlowFarneback(*previous_mat, *next_mat, uflow, pyr_scale,
+                                   levels, win_size, iterations, poly_n,
+                                   poly_sigma, flags);
       return utils::GetOpticalFlow(uflow);
     }
     // Return empty structure
