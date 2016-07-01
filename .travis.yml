@@ -1,0 +1,50 @@
+language: cpp
+
+cache: ccache
+
+compiler:
+  - g++
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-5
+      - gcc-5
+
+
+before_install:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
+  - sudo apt-get update -q
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get install build-essential cmake git pkg-config -y
+  - sudo apt-get install gcc g++ -y
+  - sudo apt-get install libncurses5-dev -y
+  - sudo apt-get install libjpeg8-dev libtiff4-dev libjasper-dev libpng12-dev -y
+  - sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev -y
+  - sudo apt-get install git\
+  - echo $PWD
+  - pushd ~ && git clone https://github.com/Itseez/opencv.git
+  - cd opencv
+  - git checkout 3.1.0
+  - cd ..
+  - git clone https://github.com/Itseez/opencv_contrib.git && cd opencv_contrib && git checkout 3.1.0
+  - cd ..
+  - cd opencv
+  - mkdir build && cd build
+  - cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D INSTALL_C_EXAMPLES=OFF -D OPENCV_EXTRA_MODULES_PATH=$HOME/opencv_contrib/modules -D BUILD_EXAMPLES=ON ..
+  - make -j 2
+  - sudo make install
+  - sudo ldconfig
+  - ldconfig -p | grep -i opencv
+  - popd
+
+
+before_script:
+  - mkdir build
+  - cd build
+  - cmake -D OpenCV_DIR=/home/travis/opencv/build .. 
+
+script:
+  - make VERBOSE=1
