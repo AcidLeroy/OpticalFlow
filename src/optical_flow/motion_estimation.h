@@ -24,7 +24,7 @@
 #include <vector>
 #include <algorithm>
 #include <typeinfo>
-#include <strstream>
+#include <sstream>
 #include <fstream>
 namespace oflow {
 
@@ -201,14 +201,6 @@ std::vector<std::string> GetLabels() {
                                   "Orient_CDF",     "Histo_CDF",
                                   "Motion_mag_CDF", "Motion_orient_CDF"};
   return labels;
-}
-
-std::ostrstream PrintFeature(const cv::Mat& feature) {
-  std::ostrstream oss;
-  for (size_t i = 0; i < feature.total(); ++i) {
-    oss << feature.at<float>(i) << " ";
-  }
-  return oss;
 }
 
 std::string PrintFeatures(const std::vector<cv::Mat>& feature_vectors,
