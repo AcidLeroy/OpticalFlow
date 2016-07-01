@@ -25,7 +25,7 @@
 #include <algorithm>
 #include <typeinfo>
 #include <strstream>
-
+#include <fstream>
 namespace oflow {
 
 class MotionEstimationException : public std::runtime_error {
@@ -240,10 +240,8 @@ void UpdateStats(const cv::Mat& binary_image, const cv::Mat& next_mat,
                  cv::Mat* orientation_histogram) {
   cv::Mat bin;
   stats::ShowImage("bin before", binary_image);
-  stats::PrintMinMax(binary_image, "bin before ");
 
   binary_image.convertTo(bin, CV_8U);
-  stats::PrintMinMax(bin, "bin after ");
 
   stats::UpdateCentroidAndOrientation(bin, orientations, centroids);
   constexpr int num_bins = 25;
@@ -253,8 +251,8 @@ void UpdateStats(const cv::Mat& binary_image, const cv::Mat& next_mat,
   // Update magnitude histogram
   stats::UpdateHistogram(bin, magnitude, magnitude_histogram, magnitude_range,
                          num_bins);
-  stats::ShowImage("bin after", bin);
-  cv::waitKey(0);
+  //  stats::ShowImage("bin after", bin);
+  //  cv::waitKey(0);
   // Update orientation histogram
   float orientation_range[2];
   orientation_range[0] = 0;
@@ -295,12 +293,11 @@ class MotionEstimation {
     while (1) {
       OpticalFlow<cv::Mat> stats =
           flow->CalculateVectors(*current_frame, *next_frame);
-      mat_type binary_image = mat_type((next_frame->GetMat())->rows,
-                                       (next_frame->GetMat())->cols, CV_8U);
+      mat_type binary_image;
       auto min_max = cv_utils::GetMinMax(stats.GetMagnitude());
-      cv::threshold(stats.GetMagnitude(), binary_image, 0.1 * min_max[1], 1,
+      cv::threshold(stats.GetMagnitude(), binary_image, 0.75 * min_max[1], 1,
                     cv::THRESH_BINARY);
-      stats::PrintMinMax(binary_image, "binary image");
+      // stats::PrintMinMax(binary_image, "binary image");
 
       //      stats::ShowImage("binary", binary_image);
       //      stats::ShowImage("current_frame", *current_frame->GetMat());
@@ -323,7 +320,7 @@ class MotionEstimation {
     cv::Mat x_cent_cdf, y_cent_cdf, orient_cent_cdf, bg_cdf, motion_mag_cdf,
         motion_orient_cdf;
 
-    std::cout << "Magnitude Histogram " << magnitude_histogram_ << std::endl;
+    // std::cout << "Magnitude Histogram " << magnitude_histogram_ << std::endl;
 
     NormalizeInternalHistogramCdfs(*(current_frame->GetMat()), &x_cent_cdf,
                                    &y_cent_cdf, &orient_cent_cdf, &bg_cdf,
