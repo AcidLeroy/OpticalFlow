@@ -9,6 +9,7 @@
 #define SRC_UTILITIES_UTILITIES_H_
 
 #include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include <cstdint>
 #include <string>
 #include <iostream>
@@ -116,6 +117,12 @@ std::string type2str(int type) {
   r += (chans + '0');
 
   return r;
+}
+
+template <typename T>
+void ShowImage(const std::string &name, const T &image) {
+  cv::namedWindow(name, 1);
+  cv::imshow(name, image);
 }
 
 }  // end namespace cv_utils

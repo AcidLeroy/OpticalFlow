@@ -8,7 +8,7 @@
 #include "../optical_flow/farneback_flow.h"
 
 #include "opencv2/core/utility.hpp"
-#include "opencv2/highgui.hpp"
+//#include "opencv2/highgui.hpp"
 #include "opencv2/videoio.hpp"
 
 #include <string>
