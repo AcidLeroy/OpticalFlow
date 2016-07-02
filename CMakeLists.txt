@@ -30,3 +30,7 @@ include_directories(
 
 add_subdirectory(src)
 
+#SET(CPACK_GENERATOR "DEB")
+#SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Cody W. Eilar") #required
+INCLUDE(CPack)
+

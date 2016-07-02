@@ -147,7 +147,7 @@ TEST(OpenCvStuff, OrientationOfConnectedComponents) {
 
   cv::findContours(img, contours, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
   std::cout << "label2 = " << std::endl << label2 << std::endl;
-  for (int i = 0; i < contours.size(); ++i) {
+  for (size_t i = 0; i < contours.size(); ++i) {
     std::cout << "The size is: " << contours[i].size() << std::endl;
     std::cout << "contours = " << std::endl << contours[i] << std::endl;
     cv::RotatedRect result = cv::fitEllipse(contours[i]);

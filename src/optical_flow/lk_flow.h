@@ -59,6 +59,7 @@ class LKFlow {
         cv::calcOpticalFlowPyrLK(*previous_mat, *next_mat, points_[0],
                                  points_[1], status, err, win_size, 3,
                                  termcrit_, 0, 0.001);
+
         points_ = utils::SanitizePoints(points_, status);
 
         VectorStatistics<cv::Mat> vs(
@@ -67,10 +68,11 @@ class LKFlow {
         ;
         OpticalFlow<cv::Mat> of{vs.VelocityX(), vs.VelocityY(),
                                 vs.Orientation(), vs.Magnitude()};
+
         std::swap(points_[1], points_[0]);
+
         return of;
       }
-
       std::swap(points_[1], points_[0]);
     }
     // Return empty structure

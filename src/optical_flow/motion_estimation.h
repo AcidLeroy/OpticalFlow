@@ -126,7 +126,7 @@ void UpdateCentroidAndOrientation(const cv::Mat& thresholded_image,
   std::vector<std::vector<cv::Point>> contours;
   cv::findContours(thresholded_image, contours, cv::RETR_LIST,
                    cv::CHAIN_APPROX_NONE);
-  for (int i = 0; i < contours.size(); ++i) {
+  for (size_t i = 0; i < contours.size(); ++i) {
     // Can only fit an ellipse with 5 points, skip others
     if (contours[i].size() >= 5) {
       cv::RotatedRect result = cv::fitEllipse(contours[i]);
@@ -139,7 +139,7 @@ cv::Mat CumSum(const cv::Mat& histogram) {
   cv::Mat cumsum =
       cv::Mat::zeros(histogram.rows, histogram.cols, histogram.type());
   cumsum.at<float>(0) = (histogram.at<float>(0));
-  for (int i = 1; i < histogram.total(); ++i) {
+  for (size_t i = 1; i < histogram.total(); ++i) {
     cumsum.at<float>(i) = cumsum.at<float>(i - 1) + histogram.at<float>(i);
   }
   return cumsum;
