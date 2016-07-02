@@ -13,16 +13,16 @@ This is an attempt to classiy typing vs no typing and writing
 vs no writing in videos provide through AOLME (Advancing
   Out of School Learning in Mathematics and Engineering).
 
-  ## Building
-  In order to build the C++, you must have the following
-  requirements:
+## Building
+In order to build the C++, you must have the following
+requirements:
 
-  - cmake
-  - OpenCV >= 3.1
+- cmake
+- OpenCV >= 3.1
 
-  In order to run the scripts, you must have:
-  - MATLAB >= 2015b
-  - R
+In order to run the scripts, you must have:
+- MATLAB >= 2015b
+- R
 
-  If you have trouble, refer to the .travis.yml file. All
-  the necessary building tools are installed in that file.
+If you have trouble, refer to the .travis.yml file. All
+the necessary building tools are installed in that file.
