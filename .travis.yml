@@ -1,51 +1,52 @@
 language: cpp
-
 cache: ccache
-
 compiler:
-  - g++
-
+- g++
 addons:
   apt:
     sources:
-      - ubuntu-toolchain-r-test
+    - ubuntu-toolchain-r-test
     packages:
-      - g++-5
-      - gcc-5
-
-
+    - g++-5
+    - gcc-5
 before_install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
-  - sudo apt-get update -q
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-  - sudo apt-get install build-essential cmake git pkg-config -y
-  - sudo apt-get install gcc g++ -y
-  - sudo apt-get install libncurses5-dev -y
-  - sudo apt-get install libjpeg8-dev libtiff4-dev libjasper-dev libpng12-dev -y
-  - sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev -y
-  - sudo apt-get install git\
-  - echo $PWD
-  - pushd ~ && git clone https://github.com/Itseez/opencv.git
-  - cd opencv
-  - git checkout 3.1.0
-  - cd ..
-  - git clone https://github.com/Itseez/opencv_contrib.git && cd opencv_contrib && git checkout 3.1.0
-  - cd ..
-  - cd opencv
-  - mkdir build && cd build
-  - cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D INSTALL_C_EXAMPLES=OFF -D OPENCV_EXTRA_MODULES_PATH=$HOME/opencv_contrib/modules -D BUILD_EXAMPLES=ON ..
-  - make -j 2
-  - sudo make install
-  - sudo ldconfig
-  - ldconfig -p | grep -i opencv
-  - popd
-
-
+- if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
+- sudo apt-get update -q
+- sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+- sudo apt-get install build-essential cmake git pkg-config -y
+- sudo apt-get install gcc g++ -y
+- sudo apt-get install libncurses5-dev -y
+- sudo apt-get install libjpeg8-dev libtiff4-dev libjasper-dev libpng12-dev -y
+- sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev -y
+- sudo apt-get install git\
+- echo $PWD
+- pushd ~ && git clone https://github.com/Itseez/opencv.git
+- cd opencv
+- git checkout 3.1.0
+- cd ..
+- git clone https://github.com/Itseez/opencv_contrib.git && cd opencv_contrib && git
+  checkout 3.1.0
+- cd ..
+- cd opencv
+- mkdir build && cd build
+- cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D INSTALL_C_EXAMPLES=OFF
+  -D OPENCV_EXTRA_MODULES_PATH=$HOME/opencv_contrib/modules -D BUILD_EXAMPLES=ON ..
+- make -j 2
+- sudo make install
+- sudo ldconfig
+- ldconfig -p | grep -i opencv
+- popd
 before_script:
-  - mkdir build
-  - cd build
-  - cmake -D OpenCV_DIR=/home/travis/opencv/build .. 
-
+- mkdir build
+- cd build
+- cmake -D OpenCV_DIR=/home/travis/opencv/build ..
 script:
-  - make VERBOSE=1
-  - CTEST_OUTPUT_ON_FAILURE=1 make test
+- make VERBOSE=1
+- CTEST_OUTPUT_ON_FAILURE=1 make test
+deploy:
+  provider: releases
+  api_key:
+    secure: xEQQ/JzwQ6ridKpWz14ecF5QI51FxEP/iIJPZS6S6WO77KMMXCymHPrFU0ti3TQVYRp3V3idvavRc6KLvTz6UiJB6DQ3PebxyXq2s2D02h9bAMCJIt+odP2tTI2MlvUpnflj9zOz2LNi2Dduy9MVAsbYSbsUK0T5pxli81eTds4wgHQoLK+ASTZdKV+NTDcHWubUG6u82qSPoJnM4p0sh6t/hXr+3FiADN7SL94bhb6UC7yN/9zT7jcgWo7PeHOrzQCAhziyODTWpQlkeJA9j0joTnFcFJ3CDx/LjH8XAR15W7M6u0cG/sKZHFFbxjBwIqdbGIQMydoHN1kMMWHW1UfJycwSZn69i1znyOS0twt/LTJF2M+JHYSsyxprzfl8+v2GKVw/pI6AON2gBqphAIA2tWvu/1K1pruQgEs3/EG/8w7G+RBVNBwbshh3o3dmQag02Vi8VX7cJM27TWOdFxEb/pf5vz4iUxNhi/XmALEi4I64U+F54s8sR+CN7B6JcMIgnaSggB8WtSnZJMvKHNfxEOuoXQUwTRvirwB+hLIeV8lWfnK/QeWnauK+88Gmpl3+amQkivYEfVgpfHzSVnuH1SoJcZMCyoKvWyNQQ9e+vMgVDSYi+BkQTR5I3kH+PLh7hj5lhoKSNVM4z6occfq1VmwdKeRAlnMBa3Xju1A=
+  file: '*.deb'
+  on:
+    repo: AcidLeroy/OpticalFlow
