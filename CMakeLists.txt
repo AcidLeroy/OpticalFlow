@@ -17,9 +17,9 @@ message("Gmock source dir is: ${gmock_SOURCE_DIR}")
 message("Celero source dir is: ${CeleroProject_SOURCE_DIR}")
 
 include_directories(
-  ${gtest_SOURCE_DIR}/include 
+  ${gtest_SOURCE_DIR}/include
   ${gtest_SOURCE_DIR}
-  ${gmock_SOURCE_DIR}/include 
+  ${gmock_SOURCE_DIR}/include
   ${gmock_SOURCE_DIR}
   ${CeleroProject_SOURCE_DIR}/include
   ${OpenCV_INCLUDE_DIRS}
@@ -29,8 +29,9 @@ include_directories(
 )
 
 add_subdirectory(src)
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  SET(CPACK_GENERATOR "DEB")
+  SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Cody W. Eilar") #required
+endif()
 
-#SET(CPACK_GENERATOR "DEB")
-#SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Cody W. Eilar") #required
 INCLUDE(CPack)
-

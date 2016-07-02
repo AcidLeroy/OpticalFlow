@@ -16,17 +16,17 @@ namespace oflow {
 
 cv::UMat OverlapAdd(const cv::UMat &x_n, const cv::UMat &h_n, size_t L) {
   // N
-  auto n_row = h_n.rows + L - 1;  // This should be nearest power of 2
-  auto n_col = h_n.cols + L - 1;
+  size_t n_row = h_n.rows + L - 1;  // This should be nearest power of 2
+  size_t n_col = h_n.cols + L - 1;
 
-  auto nx_col = x_n.cols;
-  auto nx_row = x_n.rows;
+  size_t nx_col = x_n.cols;
+  size_t nx_row = x_n.rows;
   // M
-  auto m_kernel_row = h_n.rows;
-  auto m_kernel_col = h_n.cols;
+  size_t m_kernel_row = h_n.rows;
+  size_t m_kernel_col = h_n.cols;
   // Left and Bottom pads will be the same value as right and top.
-  auto top_pad = h_n.rows - 1;
-  auto right_pad = h_n.cols - 1;
+  size_t top_pad = h_n.rows - 1;
+  size_t right_pad = h_n.cols - 1;
 
   cv::UMat y = cv::UMat::zeros(m_kernel_row + nx_row - 1,
                                m_kernel_col + nx_col - 1, x_n.type());
