@@ -108,7 +108,7 @@ TEST(OverlapAdd, ZeroPads) {
   ASSERT_TRUE(eq);
 }
 
-TEST(OverlapAdd, Idft) {
+TEST(OverlapAdd, DISABLED_Idft) {
   std::vector<uint8_t> test_vals{8, 3, 4, 1, 5, 9, 6, 7, 2};
   std::vector<float> real_dft_vals{45, 0, 0, 0, 13.5, 0, 0, 0, 13.5};
   std::vector<float> imginary_dft_vals{0,       0, 0,      0,      7.7942,
@@ -170,7 +170,7 @@ cv::UMat GetU16x16() {
   return a.getUMat(cv::ACCESS_RW);
 }
 
-TEST(OverlapAdd, OverlapAdd) {
+TEST(OverlapAdd, DISABLED_OverlapAdd) {
   cv::UMat x = GetU16x16();
   size_t L = 4;  // break image into 4x4 blocks
   cv::UMat h = cv::UMat::ones(3, 3, CV_32F);
@@ -260,7 +260,7 @@ TEST(RandomThought, DoesThisWork) {
   cv::UMat* ptr = new cv::UMat(m.getUMat(cv::ACCESS_READ));
 }
 TEST(OverlapAdd, TestType) {
-  std::cout << "type is " << type2str(6) << std::endl; 
+  std::cout << "type is " << type2str(6) << std::endl;
 }
 
 }  // end namepsace oflow
