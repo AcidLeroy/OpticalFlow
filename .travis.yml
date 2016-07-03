@@ -50,18 +50,25 @@ script:
 
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
-    docker pull acidleory/oflow-min;
-    docker run -v $PWD:/app -w /app acidleroy/oflow-min bash -c "dpkg -i *.deb";
-    docker commit `docker ps -l -q` acidleory/oflow-min;
-    docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-    docker push acidleroy/oflow-min
+    pip install --user awscli;
+    export PATH=$PATH:$HOME/.local/bin;
+    eval $(aws ecr get-login --region us-east-1);
+    docker pull 883856218903.dkr.ecr.us-west-2.amazonaws.com/optical-flow:latest;
+    docker run -v $PWD:/app -w /app 883856218903.dkr.ecr.us-west-2.amazonaws.com/optical-flow bash -c "dpkg -i *.deb";
+    docker commit `docker ps -l -q` 883856218903.dkr.ecr.us-west-2.amazonaws.com/optical-flow;
+    docker push 883856218903.dkr.ecr.us-west-2.amazonaws.com/optical-flow;
     fi
+
+before_deploy:
+  - export RELEASE_PKG_FILE=$(ls *.deb)
+  - echo "deploying $RELEASE_PKG_FILE to GitHub releases"
 
 deploy:
   provider: releases
   api_key:
     secure: xEQQ/JzwQ6ridKpWz14ecF5QI51FxEP/iIJPZS6S6WO77KMMXCymHPrFU0ti3TQVYRp3V3idvavRc6KLvTz6UiJB6DQ3PebxyXq2s2D02h9bAMCJIt+odP2tTI2MlvUpnflj9zOz2LNi2Dduy9MVAsbYSbsUK0T5pxli81eTds4wgHQoLK+ASTZdKV+NTDcHWubUG6u82qSPoJnM4p0sh6t/hXr+3FiADN7SL94bhb6UC7yN/9zT7jcgWo7PeHOrzQCAhziyODTWpQlkeJA9j0joTnFcFJ3CDx/LjH8XAR15W7M6u0cG/sKZHFFbxjBwIqdbGIQMydoHN1kMMWHW1UfJycwSZn69i1znyOS0twt/LTJF2M+JHYSsyxprzfl8+v2GKVw/pI6AON2gBqphAIA2tWvu/1K1pruQgEs3/EG/8w7G+RBVNBwbshh3o3dmQag02Vi8VX7cJM27TWOdFxEb/pf5vz4iUxNhi/XmALEi4I64U+F54s8sR+CN7B6JcMIgnaSggB8WtSnZJMvKHNfxEOuoXQUwTRvirwB+hLIeV8lWfnK/QeWnauK+88Gmpl3+amQkivYEfVgpfHzSVnuH1SoJcZMCyoKvWyNQQ9e+vMgVDSYi+BkQTR5I3kH+PLh7hj5lhoKSNVM4z6occfq1VmwdKeRAlnMBa3Xju1A=
-  file: '/home/travis/build/AcidLeroy/OpticalFlow/build/OpticalFlow-0.1.1-Linux.deb'
+  file_glob: true
+  file: "${RELEASE_PKG_FILE}"
   skip_cleanup: true
   on:
     repo: AcidLeroy/OpticalFlow
