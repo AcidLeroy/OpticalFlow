@@ -113,8 +113,6 @@ void UpdateCentroidAndOrientation(const cv::Mat& thresholded_image,
                 *centroids);
   }
 
-  // std::cout << "centroids are" << std::endl << current_centroids <<
-  // std::endl;
   std::vector<std::vector<cv::Point>> contours;
   cv::findContours(thresholded_image, contours, cv::RETR_LIST,
                    cv::CHAIN_APPROX_NONE);
@@ -235,9 +233,6 @@ void UpdateStats(const cv::Mat& binary_image, const cv::Mat& next_mat,
   // Update magnitude histogram
   stats::UpdateHistogram(bin, magnitude, magnitude_histogram, magnitude_range,
                          num_bins);
-  //  stats::ShowImage("bin after", bin);
-  //  cv::waitKey(0);
-  // Update orientation histogram
   float orientation_range[2];
   orientation_range[0] = 0;
   orientation_range[1] = M_PI;

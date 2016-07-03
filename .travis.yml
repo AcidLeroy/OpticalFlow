@@ -1,5 +1,7 @@
 language: cpp
 cache: ccache
+services:
+  - docker
 compiler:
 - g++
 addons:
@@ -40,10 +42,21 @@ before_script:
 - mkdir build
 - cd build
 - cmake -D OpenCV_DIR=/home/travis/opencv/build ..
+
 script:
 - make VERBOSE=1
 - CTEST_OUTPUT_ON_FAILURE=1 make test
 - make package
+
+after_success:
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+    docker pull acidleory/oflow-min;
+    docker run -v $PWD:/app -w /app acidleroy/oflow-min bash -c "dpkg -i *.deb";
+    docker commit `docker ps -l -q` acidleory/oflow-min;
+    docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker push acidleroy/oflow-min
+    fi
+
 deploy:
   provider: releases
   api_key:
