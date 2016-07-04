@@ -1,0 +1,14 @@
+path,classification,s3_output
+aolme/data/typing/seg2.mov,2,typing_output
+aolme/data/typing/seg3.mov,3,typing_output
+aolme/data/typing/seg4.mov,4,typing_output
+aolme/data/typing/seg5.mov,5,typing_output
+aolme/data/typing/seg6.mov,6,typing_output
+aolme/data/typing/seg7.mov,7,typing_output
+aolme/data/typing/seg8.mov,8,typing_output
+aolme/data/typing/seg9.mov,9,typing_output
+aolme/data/typing/seg10.mov,10,typing_output
+aolme/data/typing/seg11.mov,11,typing_output
+aolme/data/typing/seg12.mov,12,typing_output
+aolme/data/typing/seg13.mov,13,typing_output
+
