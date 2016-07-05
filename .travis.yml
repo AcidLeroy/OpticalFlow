@@ -53,8 +53,9 @@ after_success:
     pip install --user awscli;
     export PATH=$PATH:$HOME/.local/bin;
     eval $(aws ecr get-login --region us-west-2);
-    docker pull 883856218903.dkr.ecr.us-west-2.amazonaws.com/optical-flow:latest;
-    docker run -v $PWD:/app -w /app 883856218903.dkr.ecr.us-west-2.amazonaws.com/optical-flow:latest bash -c "dpkg -i *.deb";
+    cd ..;
+    docker build -t 883856218903.dkr.ecr.us-west-2.amazonaws.com/optical-flow:latest;
+    docker run -v $PWD:/app -w /app 883856218903.dkr.ecr.us-west-2.amazonaws.com/optical-flow:latest bash -c "dpkg -i build/*.deb";
     docker commit `docker ps -l -q` 883856218903.dkr.ecr.us-west-2.amazonaws.com/optical-flow:latest;
     docker push 883856218903.dkr.ecr.us-west-2.amazonaws.com/optical-flow:latest;
     fi
