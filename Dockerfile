@@ -18,3 +18,5 @@ RUN pip install awscli boto3 argparse
 RUN wget https://s3-us-west-2.amazonaws.com/builtopencv/OpenCV-3.1.0-x86_64.tar.gz
 RUN tar --strip-components 1 -xvf OpenCV-3.1.0-x86_64.tar.gz -C /usr/local
 RUN ldconfig
+
+CMD process_video_list.py --queue_name video_list
