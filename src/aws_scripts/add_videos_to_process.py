@@ -7,6 +7,15 @@ import os
 import pandas as pd
 import message_type as mt
 import boto3
+from time import sleep
+
+def GetMessagesInQueue(sqs_resource, queue_name):
+    # Get the queue. This returns an SQS.Queue instance
+    queue = sqs_resource.get_queue_by_name(QueueName=queue_name)
+
+    # You can now access identifiers and attributes
+    num_messages = queue.attributes.get('ApproximateNumberOfMessages')
+    return int(num_messages)
 
 def main():
     parser = argparse.ArgumentParser(description="A utility to add a list of video files that exist on Amazon S3 from which to extract features.")
@@ -36,6 +45,21 @@ def main():
     for messages in batch_messages:
         response = queue.send_messages(Entries=messages)
         print("Errors received from response: ", response.get('Failed'))
+
+    # Get the service resource
+    sqs_resource = boto3.resource('sqs')
+
+
+    # Wait for queue to become empty
+    num_messages = GetMessagesInQueue(sqs_resource, queue_name)
+    while num_messages > 0:
+        print("There are ", num_messages, " remaining in queue")
+        sleep(1)
+        num_messages = GetMessagesInQueue(sqs_resource, queue_name)
+
+    print("All messages have been processed! Exiting...")
+
+
 
 
 

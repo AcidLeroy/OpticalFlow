@@ -3,7 +3,47 @@
 from __future__ import print_function
 import argparse
 import boto3
+import botocore
 import uuid
+import subprocess
+
+def DownloadVideo(path):
+    """
+    Download video file from s3 and return the local filename in temp
+    :param path: s3 path: bucketname/location/to/file.mov
+    :return: filename, i.e. /tmp/file.mov
+    """
+    bucket = path.split('/')[0]
+    loc = '/'.join([str(x) for x in path.split('/')[1:]])
+    filename = '/tmp/' + path.split('/')[-1]
+    s3 = boto3.client('s3')
+    s3.download_file(bucket, loc, filename)
+    return filename
+
+def WriteResults(results, s3_output):
+    """
+    Write the results to an s3 bucket
+    :param results: (string) Feature vector output
+    :param s3_output: (string) folder to store the output
+    :return:
+    """
+    # Write the results to s3
+    default_output_dir="featureoutput"
+    s3_client = boto3.client('s3')
+    filename =  str(uuid.uuid1()) + '.csv'
+    path_to_file = '/tmp/'+filename
+    with open(path_to_file, 'w') as f:
+        f.write(results)
+
+    file_path = s3_output + '/' + filename
+    s3_client.upload_file(path_to_file, default_output_dir, file_path)
+
+def ComputeResults(input_video_file):
+    cmd = ['extract_features','--video='+input_video_file]
+    results = subprocess.check_output(cmd)
+    return results
+
+
 
 def main():
     parser = argparse.ArgumentParser(description="A utility to process videos on the SQS queue. The idea with "
@@ -28,27 +68,29 @@ def main():
     queue = sqs.get_queue_by_name(QueueName=queue_name)
 
     # Top level bucket directory to use for s3
-    default_output_dir="featureoutput"
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket(default_output_dir)
-    s3_client = boto3.client('s3')
+
 
 
     while(True):
         for message in queue.receive_messages(MessageAttributeNames=['Classification','S3Output']):
             classification = message.message_attributes.get('Classification').get('StringValue')
             s3_output = message.message_attributes.get('S3Output').get('StringValue')
-            output_string = "Path = "+ message.body+ " with classification = "+ classification+ " Goes to path: "+ \
-                            s3_output + '\n'
-            print(output_string)
+            path_to_video = message.body
+            try:
+                local_video_file = DownloadVideo(path_to_video)
+                output_string = "Path = "+ message.body+ " with classification = "+ classification+ " Goes to path: "+ \
+                                s3_output + '\n'
+                print(output_string)
+                results = ComputeResults(local_video_file)
 
-            #Write the results to s3
-            filename = str(uuid.uuid1()) + '.csv'
-            with open(filename, 'w') as f:
-                f.write(output_string)
+                WriteResults(results, s3_output)
 
-            file_path = s3_output + '/' + filename
-            s3_client.upload_file(filename, default_output_dir, file_path)
+            except botocore.exceptions.ClientError as e:
+                print("Received an error: ", e)
+
+            except subprocess.CalledProcessError as e:
+                print("Could not run command: extract_features on file ", local_video_file)
+                print(e)
 
             message.delete()
 
