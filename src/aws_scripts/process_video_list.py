@@ -38,8 +38,21 @@ def WriteResults(results, s3_output):
     file_path = s3_output + '/' + filename
     s3_client.upload_file(path_to_file, default_output_dir, file_path)
 
-def ComputeResults(input_video_file):
-    cmd = ['extract_features','--video='+input_video_file]
+def WriteResultsToQueue(results, output_queue_name):
+    """
+    Send the results of computing vectors to a queue
+    :param results: feature vectors computed by extract_features
+    :param output_queue_name: The name of the queue for which to place the results
+    :return:
+    """
+    sqs = boto3.resource('sqs')
+    queue = sqs.create_queue(QueueName=output_queue_name)
+    queue.send_message(MessageBody=results)
+
+
+
+def ComputeResults(input_video_file, classification):
+    cmd = ['extract_features','--video='+input_video_file, '--classification='+classification]
     results = subprocess.check_output(cmd)
     return results
 
@@ -61,29 +74,23 @@ def main():
     queue_name = args.queue_name
     print("Using queue name: ", queue_name)
 
-
-
     # Get the SQS messages
     sqs = boto3.resource('sqs')
     queue = sqs.get_queue_by_name(QueueName=queue_name)
 
-    # Top level bucket directory to use for s3
-
-
-
     while(True):
-        for message in queue.receive_messages(MessageAttributeNames=['Classification','S3Output']):
+        for message in queue.receive_messages(MessageAttributeNames=['Classification','SQSQueue']):
             classification = message.message_attributes.get('Classification').get('StringValue')
-            s3_output = message.message_attributes.get('S3Output').get('StringValue')
+            sqs_output = message.message_attributes.get('SQSQueue').get('StringValue')
             path_to_video = message.body
             try:
                 local_video_file = DownloadVideo(path_to_video)
-                output_string = "Path = "+ message.body+ " with classification = "+ classification+ " Goes to path: "+ \
-                                s3_output + '\n'
+                output_string = "Path = "+ message.body+ " with classification = "+ classification+ " Goes to SQS outputqueue named: "+ \
+                                sqs_output + '\n'
                 print(output_string)
-                results = ComputeResults(local_video_file)
+                results = ComputeResults(local_video_file, classification)
 
-                WriteResults(results, s3_output)
+                WriteResultsToQueue(results, sqs_output)
 
             except botocore.exceptions.ClientError as e:
                 print("Received an error: ", e)

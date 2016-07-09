@@ -57,8 +57,8 @@ def create_messages_from_df(df):
                     'StringValue': str(series['classification']),
                     'DataType': 'Number'
                 },
-                'S3Output': {
-                    'StringValue': str(series['s3_output']),
+                'SQSQueue': {
+                    'StringValue': str(series['sqs_queue']),
                     'DataType': 'String'
                 }
             }

@@ -35,6 +35,28 @@ def DeleteMessagesInBucket(s3_bucket, key):
     for obj in s3_bucket.objects.filter(Prefix=key):
         s3.Object(s3_bucket.name, obj.key).delete()
 
+def InitializeOutputQueue(queue_name):
+    sqs = boto3.resource('sqs')
+    output_queue = sqs.create_queue(QueueName=queue_name)
+    output_queue.purge()
+    return output_queue
+
+def ReceiveNMessagesFromOutputQueue(output_queue, number_messages):
+    """
+    :param output_queue:
+    :param number_messages:
+    :return:
+    """
+    messages_received = 0
+    message_list = []
+    while messages_received != number_messages:
+        for message in output_queue.receive_messages():
+            print("Received: ", message.body)
+            messages_received = messages_received + 1
+            message_list.append(message.body)
+            message.delete()
+    return message_list
+
 
 
 
@@ -53,7 +75,12 @@ def main():
     queue_name = args.queue_name
 
     print("Processing file = ", input_file)
-    print("Using queue = ", queue_name)
+    print("Using queue = ", queue_name, " for putting video paths")
+
+    # Set up the queue for receiving the output of the compute nodes
+    output_queue = InitializeOutputQueue("feature_queue")
+
+
     df = pd.read_csv(input_file)
     # Create the messages to send to sqs
     batch_messages = mt.create_messages_from_df(df)
@@ -86,23 +113,13 @@ def main():
     stop = time.time()
     print("It took ", stop - start, " seconds for all messages to be ingested.")
 
-    # Wait for all output to be available
-    s3 = boto3.resource('s3')
-    my_bucket = s3.Bucket('featureoutput')
+    # Retrieve messages from the sqs queue
     total_features = len(df)
-    key = df['s3_output'][0]
-    features_in_bucket = GetNumberOfOutputs(my_bucket, key)
-    while features_in_bucket != total_features:
-        features_in_bucket = GetNumberOfOutputs(my_bucket, key)
-        print("There are ", features_in_bucket, "output features in bucket.")
-        sleep(1)
+
+    message_list = ReceiveNMessagesFromOutputQueue(output_queue, total_features)
 
     stop = time.time()
     print("It took ", stop - start, "seconds to process ", len(df), " videos")
-
-    # Get all features messages
-    DownloadMessagesInBucket(my_bucket, key)
-
 
 
 if __name__=='__main__':
