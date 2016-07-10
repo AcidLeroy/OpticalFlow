@@ -46,9 +46,11 @@ def InitializeOutputQueue(queue_name):
 
 def ReceiveNMessagesFromOutputQueue(output_queue, number_messages):
     """
-    :param output_queue:
-    :param number_messages:
-    :return:
+    Function that polls the queue for N number of messages. This loop does not
+    exit until all messages from the output queue have been received
+    :param output_queue: The queue to poll for CDFs
+    :param number_messages: The number of messages to expect to receive before exiting
+    :return: list of all the cdfs calculated
     """
     messages_received = 0
     message_list = []
@@ -83,7 +85,6 @@ def main():
     # Set up the queue for receiving the output of the compute nodes
     output_queue = InitializeOutputQueue("feature_queue")
 
-
     df = pd.read_csv(input_file)
     # Create the messages to send to sqs
     batch_messages = mt.create_messages_from_df(df)
@@ -99,7 +100,7 @@ def main():
 
 
 
-    # Wait for queue to become empty
+    # Wait for input queue to become empty
     num_messages = GetMessagesInQueue(sqs, queue_name)
 
     start = time.time()
@@ -119,6 +120,7 @@ def main():
     # Retrieve messages from the sqs queue
     total_features = len(df)
 
+    # Poll until all the messages have been received.
     message_list = ReceiveNMessagesFromOutputQueue(output_queue, total_features)
 
     stop = time.time()

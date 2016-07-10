@@ -6,6 +6,7 @@ import boto3
 import botocore
 import uuid
 import subprocess
+import os
 
 def DownloadVideo(path):
     """
@@ -19,6 +20,14 @@ def DownloadVideo(path):
     s3 = boto3.client('s3')
     s3.download_file(bucket, loc, filename)
     return filename
+
+def DeleteLocalFile(local_file):
+    """
+    Delete the local downloaded version once it has been processed.
+    :param local_file: path to the local file
+    :return: None
+    """
+    os.remove(local_file)
 
 def WriteResults(results, s3_output):
     """
@@ -51,8 +60,8 @@ def WriteResultsToQueue(results, output_queue_name):
 
 
 
-def ComputeResults(input_video_file, classification):
-    cmd = ['extract_features','--video='+input_video_file, '--classification='+classification]
+def ComputeResults(program, input_video_file, classification):
+    cmd = [program,'--video='+input_video_file, '--classification='+classification]
     results = subprocess.check_output(cmd)
     return results
 
@@ -69,10 +78,16 @@ def main():
                                                                           ' match the name that was used when adding'
                                                                           ' videos to the queue. The default is '
                                                                           '\'default\'. ')
+    parser.add_argument('--program', type=str, default='extract_features',
+                        help='The command to run to extract features. The purpose of this command is to set the where '
+                             'the feature extractor command is just in case it is not on the path. This is useful, '
+                             'for example if extract_features is in say, /home/user/my_opticalflow/build/bin/extract_features.')
 
     args = parser.parse_args()
     queue_name = args.queue_name
+    program = args.program
     print("Using queue name: ", queue_name)
+    print("Using program \'",program,"\' to extract features")
 
     # Get the SQS messages
     sqs = boto3.resource('sqs')
@@ -83,14 +98,31 @@ def main():
             classification = message.message_attributes.get('Classification').get('StringValue')
             sqs_output = message.message_attributes.get('SQSQueue').get('StringValue')
             path_to_video = message.body
+            output_string = "Path = " + message.body + " with classification = " + classification + " Goes to SQS outputqueue named: " + \
+                            sqs_output + '\n'
+            print(output_string)
             try:
-                local_video_file = DownloadVideo(path_to_video)
-                output_string = "Path = "+ message.body+ " with classification = "+ classification+ " Goes to SQS outputqueue named: "+ \
-                                sqs_output + '\n'
-                print(output_string)
-                results = ComputeResults(local_video_file, classification)
 
+                # Donwload the video file from S3
+                print("Downloading video file from S3 bucket...")
+                local_video_file = DownloadVideo(path_to_video)
+                print("Done!")
+
+
+                # Run extract features command
+                print("Computing results on ", local_video_file, " ...")
+                results = ComputeResults(program, local_video_file, classification)
+                print("Done!")
+
+                # Write the results to the SQS queue to be processed by the master node.
+                print("Writing results to queue \'", sqs_output, "\'...")
                 WriteResultsToQueue(results, sqs_output)
+                print("Done!")
+
+                # Clean up the instance so we don't run out of disk space.
+                print("Deleting local resource \'", local_video_file, "\'...")
+                DeleteLocalFile(local_video_file)
+                print("Done!")
 
             except botocore.exceptions.ClientError as e:
                 print("Received an error: ", e)
