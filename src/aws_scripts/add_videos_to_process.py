@@ -38,7 +38,10 @@ def DeleteMessagesInBucket(s3_bucket, key):
 def InitializeOutputQueue(queue_name):
     sqs = boto3.resource('sqs')
     output_queue = sqs.create_queue(QueueName=queue_name)
-    output_queue.purge()
+    try:
+        output_queue.purge()
+    except:
+        print("Already purged...")
     return output_queue
 
 def ReceiveNMessagesFromOutputQueue(output_queue, number_messages):

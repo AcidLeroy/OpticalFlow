@@ -69,7 +69,7 @@ def create_messages_from_df(df):
             batch_messages.append(messages)
             messages=[]
 
-    if len(messages) != max_size:
+    if len(messages) != max_size and len(messages) > 0:
         batch_messages.append(messages)
 
 
