@@ -9,8 +9,8 @@ the essense of the MATLAB code located in src/matlab.
 Furthermore, R code is included to then classify the features.
 This code is located in src/r_code. The idea is to take the output of the C++ code and run it as the input to the R code
 to correctly classify the motions in the video. Particularly,
-This is an attempt to classiy typing vs no typing and writing
-vs no writing in videos provide through AOLME (Advancing
+this is an attempt to classify typing vs. no typing and writing
+vs no writing in videos provided through AOLME (Advancing
   Out of School Learning in Mathematics and Engineering).
 
 ## Building
@@ -23,6 +23,9 @@ requirements:
 In order to run the scripts, you must have:
 - MATLAB >= 2015b
 - R
+- Python 2.7
 
 If you have trouble, refer to the .travis.yml file. All
 the necessary building tools are installed in that file.
+
+If you would like to run the code, particularly the `extract_features` program, you can do so if you are running Ubuntu by installing the .deb file in the releases. 
