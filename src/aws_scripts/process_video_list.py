@@ -60,8 +60,8 @@ def WriteResultsToQueue(results, output_queue_name):
 
 
 
-def ComputeResults(program, input_video_file, classification):
-    cmd = [program,'--video='+input_video_file, '--classification='+classification]
+def ComputeResults(program, input_video_file, classification, algorithm):
+    cmd = [program,'--video='+input_video_file, '--classification='+classification, '--type='+algorithm]
     results = subprocess.check_output(cmd)
     return results
 
@@ -94,9 +94,10 @@ def main():
     queue = sqs.get_queue_by_name(QueueName=queue_name)
 
     while(True):
-        for message in queue.receive_messages(MessageAttributeNames=['Classification','SQSQueue']):
+        for message in queue.receive_messages(MessageAttributeNames=['Classification','SQSQueue','Algorithm']):
             classification = message.message_attributes.get('Classification').get('StringValue')
             sqs_output = message.message_attributes.get('SQSQueue').get('StringValue')
+            algorithm = message.message_attributes.get('Algorithm').get('StringValue')
             path_to_video = message.body
             output_string = "Path = " + message.body + " with classification = " + classification + " Goes to SQS outputqueue named: " + \
                             sqs_output + '\n'
@@ -111,7 +112,7 @@ def main():
 
                 # Run extract features command
                 print("Computing results on ", local_video_file, " ...")
-                results = ComputeResults(program, local_video_file, classification)
+                results = ComputeResults(program, local_video_file, classification, algorithm)
                 print("Done!")
 
                 # Write the results to the SQS queue to be processed by the master node.

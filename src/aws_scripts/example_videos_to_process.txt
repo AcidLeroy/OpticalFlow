@@ -1,13 +1,3 @@
-path,classification,sqs_queue
-aolme/data/typing/seg2.mov,2,feature_queue
-aolme/data/typing/seg3.mov,3,feature_queue
-aolme/data/typing/seg4.mov,4,feature_queue
-aolme/data/typing/seg5.mov,5,feature_queue
-aolme/data/typing/seg6.mov,6,feature_queue
-aolme/data/typing/seg7.mov,7,feature_queue
-aolme/data/typing/seg8.mov,8,feature_queue
-aolme/data/typing/seg9.mov,9,feature_queue
-aolme/data/typing/seg10.mov,10,feature_queue
-aolme/data/typing/seg11.mov,11,feature_queue
-aolme/data/typing/seg12.mov,12,feature_queue
-aolme/data/typing/seg13.mov,13,feature_queue
+path,classification,sqs_queue,of_algorithm
+aolme/data/typing/seg1.mov,2,feature_queue,lucas
+aolme/data/typing/segs1.mov,3,feature_queue,lucas

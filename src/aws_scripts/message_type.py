@@ -41,7 +41,7 @@ def create_messages(list_of_files, classification):
 def create_messages_from_df(df):
     """
     Create a message to send to SQS from a pandas data frame
-    :param df: Dataframe consisting of ['path', 'classification', 's3_output']
+    :param df: Dataframe consisting of ['path', 'classification', 'sqs_queue', 'of_algorithm']
     :return: Returns a message that can be sent with boto3 to sqs
     """
     max_size = 10
@@ -60,7 +60,11 @@ def create_messages_from_df(df):
                 'SQSQueue': {
                     'StringValue': str(series['sqs_queue']),
                     'DataType': 'String'
-                }
+                },
+                'Algorithm': {
+                    'StringValue': str(series['of_algorithm']),
+                    'DataType': 'String'
+                },
             }
         }
         messages.append(message)
