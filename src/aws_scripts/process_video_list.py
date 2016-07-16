@@ -126,10 +126,16 @@ def main():
 
             except botocore.exceptions.ClientError as e:
                 print("Received an error: ", e)
+                # Write Error to queue:
+                error = "Error: " + str(e) + "s3 link = " + path_to_video
+                WriteResultsToQueue(error, sqs_output)
 
             except subprocess.CalledProcessError as e:
                 print("Could not run command: extract_features on file ", local_video_file)
                 print(e)
+                #Write error to queue
+                error = "Error: " + str(e) + "s3 link = "+ path_to_video
+                WriteResultsToQueue("Error: " + error, sqs_output)
 
             message.delete()
 
