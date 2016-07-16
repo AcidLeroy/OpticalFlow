@@ -127,9 +127,9 @@ def main():
     print("It took ", stop - start, "seconds to process ", len(df), " videos")
 
     # save messages to a file
-    header = ['CenX_CDF,CenY_CDF,Orient_CDF,Histo_CDF,Motion_mag_CDF,Motion_orient_CDF,classification']
+    header = ['CenX_CDF,CenY_CDF,Orient_CDF,Histo_CDF,Motion_mag_CDF,Motion_orient_CDF,classification\n']
     message_list = header + message_list
-    message_list = ('\n').join(message_list)
+    message_list = ('').join(message_list)
     with open('output.csv', 'wb') as f:
         f.write(message_list)
 

@@ -105,7 +105,7 @@ def main():
             message.delete() # message received, now delete it.
             try:
 
-                # Donwload the video file from S3
+                # Download the video file from S3
                 print("Downloading video file from S3 bucket...")
                 local_video_file = DownloadVideo(path_to_video)
                 print("Done!")
