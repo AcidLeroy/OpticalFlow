@@ -102,6 +102,7 @@ def main():
             output_string = "Path = " + message.body + " with classification = " + classification + " Goes to SQS outputqueue named: " + \
                             sqs_output + '\n'
             print(output_string)
+            message.delete() # message received, now delete it.
             try:
 
                 # Donwload the video file from S3
@@ -138,7 +139,7 @@ def main():
                 error = "Error: " + str(e) + "s3 link = "+ path_to_video
                 WriteResultsToQueue("Error: " + error, sqs_output)
 
-            message.delete()
+
 
 
 if __name__=="__main__":
