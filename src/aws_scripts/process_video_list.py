@@ -116,6 +116,9 @@ def main():
                 results = ComputeResults(program, local_video_file, classification, algorithm)
                 print("Done!")
 
+                # Prepend s3 bucket filename to results
+                results = path_to_video + ',' + results
+
                 # Write the results to the SQS queue to be processed by the master node.
                 print("Writing results to queue \'", sqs_output, "\'...")
                 WriteResultsToQueue(results, sqs_output)

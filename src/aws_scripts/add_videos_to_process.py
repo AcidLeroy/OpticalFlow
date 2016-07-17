@@ -38,6 +38,7 @@ def DeleteMessagesInBucket(s3_bucket, key):
 def InitializeOutputQueue(queue_name):
     sqs = boto3.resource('sqs')
     output_queue = sqs.create_queue(QueueName=queue_name)
+
     try:
         output_queue.purge()
     except:
@@ -52,17 +53,19 @@ def ReceiveNMessagesFromOutputQueue(output_queue, number_messages):
     :param number_messages: The number of messages to expect to receive before exiting
     :return: list of all the cdfs calculated
     """
-    messages_received = 0
-    message_list = []
-    while messages_received != number_messages:
-        for message in output_queue.receive_messages():
-            print("Received: ", message.body)
-            messages_received = messages_received + 1
-            message_list.append(message.body)
-            message.delete()
+    try:
+        messages_received = 0
+        message_list = []
+        while messages_received != number_messages:
+            for message in output_queue.receive_messages():
+                print("Received: ", message.body)
+                messages_received = messages_received + 1
+                message_list.append(message.body)
+                message.delete()
+    except KeyboardInterrupt as e:
+        print("Stopping loop even though all messages were not received...")
+
     return message_list
-
-
 
 
 def main():
@@ -121,13 +124,15 @@ def main():
     total_features = len(df)
 
     # Poll until all the messages have been received.
+    print("Wating for all messages to be processed...")
     message_list = ReceiveNMessagesFromOutputQueue(output_queue, total_features)
+    print("Done!")
 
     stop = time.time()
     print("It took ", stop - start, "seconds to process ", len(df), " videos")
 
     # save messages to a file
-    header = ['CenX_CDF,CenY_CDF,Orient_CDF,Histo_CDF,Motion_mag_CDF,Motion_orient_CDF,classification\n']
+    header = ['Filename,CenX_CDF,CenY_CDF,Orient_CDF,Histo_CDF,Motion_mag_CDF,Motion_orient_CDF,Classification\n']
     message_list = header + message_list
     message_list = ('').join(message_list)
     with open('output.csv', 'wb') as f:
