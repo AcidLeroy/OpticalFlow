@@ -129,7 +129,7 @@ def main():
     print("Done!")
 
     stop = time.time()
-    print("It took ", stop - start, "seconds to process ", len(df), " videos")
+    print("It took ", stop - start, "seconds to process ", len(message_list), " videos")
 
     # save messages to a file
     header = ['Filename,CenX_CDF,CenY_CDF,Orient_CDF,Histo_CDF,Motion_mag_CDF,Motion_orient_CDF,Classification\n']

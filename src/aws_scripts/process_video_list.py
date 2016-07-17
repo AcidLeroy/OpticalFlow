@@ -102,7 +102,7 @@ def main():
             output_string = "Path = " + message.body + " with classification = " + classification + " Goes to SQS outputqueue named: " + \
                             sqs_output + '\n'
             print(output_string)
-            message.delete() # message received, now delete it.
+
             try:
 
                 # Download the video file from S3
@@ -118,6 +118,7 @@ def main():
 
                 # Prepend s3 bucket filename to results
                 results = path_to_video + ',' + results
+                print("The results are :", results)
 
                 # Write the results to the SQS queue to be processed by the master node.
                 print("Writing results to queue \'", sqs_output, "\'...")
@@ -141,6 +142,10 @@ def main():
                 #Write error to queue
                 error = "Error: " + str(e) + "s3 link = "+ path_to_video
                 WriteResultsToQueue("Error: " + error, sqs_output)
+
+            print("Deleting message from the queue...")
+            message.delete()  # message received, now delete it.
+            print("Done!")
 
 
 
