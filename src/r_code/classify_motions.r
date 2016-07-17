@@ -30,7 +30,7 @@ PlotHistsClasses <- function(VideoHists){
   
   library(ggplot2);
   par(mfrow=c(6,2));
-  par(mar=c(1,1,1,1))
+  par(mar=c(2,1,2,1))
   
   no_plot = "Classification"
   x_labels = c('x', 'y', 'angle', 'angle', 'motion magnitude', 'angle')
@@ -101,7 +101,7 @@ PlotFeatureClasses <- function(VideoHists){
   
   library(ggplot2);
   
-  par(mfrow=c(1,2));
+  par(mfrow=c(1,2), mar=c(10, 4, 10, 2) + 0.1);
   plot(melt(VideoHists1),
        main="1: Selected Features", 
        xlab="x", 
