@@ -68,6 +68,7 @@ def ReceiveNMessagesFromOutputQueue(output_queue, number_messages):
     return message_list
 
 
+
 def main():
     parser = argparse.ArgumentParser(description="A utility to add a list of video files that exist on Amazon S3 from which to extract features.")
     parser.add_argument("input_file", type=str, help="Path to a file that contains a list"

@@ -30,9 +30,9 @@ PlotHistsClasses <- function(VideoHists){
   
   library(ggplot2);
   par(mfrow=c(6,2));
-  par(mar=c(2,1,2,1))
+  par(mar=c(1,1,1,1))
   
-  no_plot = "Classification"
+  no_plot = c("Filename", "Classification")
   x_labels = c('x', 'y', 'angle', 'angle', 'motion magnitude', 'angle')
   idx = 1; 
   for( i in names(VideoHists[!names(VideoHists) %in% no_plot])) {
@@ -65,9 +65,12 @@ FeatureSelection <- function(VideoHists){
   
   # Go through and construct only the variables that are different:
   ValidVars = c()
-
-  # Loop through all variables except classifcation
-  for( i in names(VideoHists[!names(VideoHists) %in% "Classification"])) {
+  
+  # Don't use these variables 
+  no_use = c("Filename", "Classification")
+  
+  # Loop through all variables except for the ones specified in no_use
+  for( i in names(VideoHists[!names(VideoHists) %in% no_use])) {
     # Compare every variable:
     x = unlist(VideoHists1[[i]]);
     y = unlist(VideoHists2[[i]]);
@@ -84,8 +87,8 @@ FeatureSelection <- function(VideoHists){
     }
   }
   
-  # Attach classification
-  ValidVars = c(ValidVars, "Classification")
+  # Attach unsued variables
+  ValidVars = c(ValidVars, no_use)
   return (VideoHists[ValidVars])
  
 }
@@ -123,7 +126,8 @@ ClassifyFeatures <- function(VideoHists){
   svmResult <- rep(1, times=NoOfSamples);
   
   # Remove classification
-  features = GetAllExcept(VideoHists, "Classification")
+  no_use = c("Filename", "Classification")
+  features = GetAllExcept(VideoHists, no_use)
   
   # Create a leave one out classification approach
   for(i in 1:NoOfSamples)
@@ -138,7 +142,7 @@ ClassifyFeatures <- function(VideoHists){
     
     # Prepare the labels for the training set:
     #  Optimal: k=1
-    knnResult[i] <- knn (trainData, testData, All_cl[-i], k=3); # 3
+    knnResult[i] <- knn (trainData, testData, All_cl[-i], k=4); # 3
     
     #**** With tuning ****#
     tune.out=tune(svm, trainData, All_cl[-i], , kernel="linear", ranges=list(cost=c(0.0001, 0.001, 0.01, 0.1, 1, 5, 10, 100, 10000)) , scale=FALSE)
@@ -177,8 +181,7 @@ if(length(new.packages)) install.packages(new.packages)
 
 
 #VideoHists = LoadVideoFeatures("/Users/cody/Repos/OpticalFlow/src/matlab/VideoHistos_Typing_cells.csv")
-VideoHists = LoadVideoFeatures("/Users/cody/Repos/OpticalFlow/build/bin/test.txt")
-
+VideoHists = LoadVideoFeatures("/Users/cody/Repos/OpticalFlow/src/aws_scripts/output.csv")
 # We want to visualize the CDF plots.
 library(reshape2);
 
