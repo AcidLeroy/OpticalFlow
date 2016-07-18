@@ -9,6 +9,7 @@ import message_type as mt
 import boto3
 from time import sleep
 import time
+import sys
 
 def GetMessagesInQueue(sqs_resource, queue_name):
     # Get the queue. This returns an SQS.Queue instance
@@ -45,23 +46,40 @@ def InitializeOutputQueue(queue_name):
         print("Already purged...")
     return output_queue
 
-def ReceiveNMessagesFromOutputQueue(output_queue, number_messages):
+def PopulateMessageList(expected_files, message_list, current_message):
+    # Just need to assume that first value is the filename
+    message_filename = current_message.split(',')[0]
+    for idx, filename in enumerate(expected_files):
+        if filename == message_filename:
+            message_list.append(current_message)
+            del expected_files[idx]
+            return (expected_files, message_list, True)
+    return (expected_files, message_list, False)
+
+def ReceiveNMessagesFromOutputQueue(output_queue, expected_files):
     """
-    Function that polls the queue for N number of messages. This loop does not
-    exit until all messages from the output queue have been received
-    :param output_queue: The queue to poll for CDFs
-    :param number_messages: The number of messages to expect to receive before exiting
-    :return: list of all the cdfs calculated
+    Function that polls the queue for messages.
+    expected_files: This is a list of the files we expect to get back from the queue. We only want to get
+    messages we are actually expecting.
     """
     try:
-        messages_received = 0
         message_list = []
-        while messages_received != number_messages:
+        number_messages = len(expected_files)
+        while len(message_list) != number_messages:
             for message in output_queue.receive_messages():
-                print("Received: ", message.body)
-                messages_received = messages_received + 1
-                message_list.append(message.body)
-                message.delete()
+                expected_files, message_list, added_message = PopulateMessageList(expected_files, message_list, message.body)
+                # Only delete the message if we added it our list, otherwise leave it.
+                if added_message:
+                    message.delete()
+            OKGREEN = '\033[92m'
+            ENDC = '\033[0m'
+            print("Waiting for the following files to be processed: \n")
+            print(OKGREEN)
+            print(('\n').join(expected_files))
+            print(ENDC)
+            print()
+            sys.stdout.flush()
+            sleep(2)
     except KeyboardInterrupt as e:
         print("Stopping loop even though all messages were not received...")
 
@@ -122,11 +140,11 @@ def main():
     print("It took ", stop - start, " seconds for all messages to be ingested.")
 
     # Retrieve messages from the sqs queue
-    total_features = len(df)
+    filenames_to_receive = list(df['path'])
 
     # Poll until all the messages have been received.
     print("Wating for all messages to be processed...")
-    message_list = ReceiveNMessagesFromOutputQueue(output_queue, total_features)
+    message_list = ReceiveNMessagesFromOutputQueue(output_queue, filenames_to_receive)
     print("Done!")
 
     stop = time.time()

@@ -11,13 +11,17 @@ function features = extract_feature_vectors(features_to_extract, data_dir)
 switch features_to_extract 
    case 'typing'
       % Define the videos:
-      Dir = strcat(data_dir ,'/typing/Cropped/');
-      Videos = {'seg_a.mp4', 'seg_b.mp4', 'seg1.mov','seg4.mov', 'seg8.mov', 'seg9.mov', 'seg19.mov', };
-      VideoList = strcat(Dir, Videos); 
+      Dir = strcat(data_dir ,'/typing/Cropped/*.mp4');
 
-      NoActionDir = strcat(data_dir, '/notyping/Cropped/');
-      NoActionVideos= {'seg1.mov','seg9.mov', 'seg11.mov',  'seg12.mov'}; 
-      NoActionVideoList = strcat(NoActionDir, NoActionVideos); 
+      VideoList = ls(Dir); 
+      VideoList = strsplit(VideoList, '\n')
+      VideoList = VideoList(1:end-1);
+
+      NoActionDir = strcat(data_dir, '/notyping/Cropped/*.mp4');
+      NoActionVideoList = ls(NoActionDir); 
+      NoActionVideoList = strsplit(NoActionVideoList, '\n');
+      NoActionVideoList = NoActionVideoList(1:end-1);
+       
       feature_name = 'Typing'; 
 
 

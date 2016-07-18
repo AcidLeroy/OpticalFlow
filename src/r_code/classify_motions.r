@@ -142,7 +142,7 @@ ClassifyFeatures <- function(VideoHists){
     
     # Prepare the labels for the training set:
     #  Optimal: k=1
-    knnResult[i] <- knn (trainData, testData, All_cl[-i], k=4); # 3
+    knnResult[i] <- knn (trainData, testData, All_cl[-i], k=3); # 3
     
     #**** With tuning ****#
     tune.out=tune(svm, trainData, All_cl[-i], , kernel="linear", ranges=list(cost=c(0.0001, 0.001, 0.01, 0.1, 1, 5, 10, 100, 10000)) , scale=FALSE)
