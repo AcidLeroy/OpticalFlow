@@ -73,13 +73,14 @@ def ReceiveNMessagesFromOutputQueue(output_queue, expected_files):
                     message.delete()
             OKGREEN = '\033[92m'
             ENDC = '\033[0m'
-            print("Waiting for the following files to be processed: \n")
-            print(OKGREEN)
-            print(('\n').join(expected_files))
-            print(ENDC)
+            print("Waiting for the following files to be processed:")
+            print(OKGREEN, end="")
+            print('\n\t', end="")
+            print(('\n\t').join(expected_files))
+            print(ENDC, end="")
             print()
             sys.stdout.flush()
-            sleep(2)
+            sleep(5)
     except KeyboardInterrupt as e:
         print("Stopping loop even though all messages were not received...")
 
