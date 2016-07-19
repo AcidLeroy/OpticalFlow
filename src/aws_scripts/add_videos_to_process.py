@@ -73,7 +73,7 @@ def ReceiveNMessagesFromOutputQueue(output_queue, expected_files):
                     message.delete()
             OKGREEN = '\033[92m'
             ENDC = '\033[0m'
-            print("Waiting for the following files to be processed:")
+            print("Waiting for the following files to be processed:", end="")
             print(OKGREEN, end="")
             print('\n\t', end="")
             print(('\n\t').join(expected_files))

@@ -7,6 +7,7 @@ import botocore
 import uuid
 import subprocess
 import os
+import time
 
 def DownloadVideo(path):
     """
@@ -146,6 +147,7 @@ def main():
             print("Deleting message from the queue...")
             message.delete()  # message received, now delete it.
             print("Done!")
+        time.sleep(1)
 
 
 
