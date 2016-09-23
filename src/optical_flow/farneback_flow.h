@@ -39,7 +39,7 @@ static OpticalFlow<cv::Mat> GetOpticalFlow(const mat_type& flow) {
         orient.at<float>(y, x) = 0;
       }
     }
-  cv::normalize(mag, mag, 0, 1, cv::NORM_MINMAX);
+  // cv::normalize(mag, mag, 0, 1, cv::NORM_MINMAX);
   return OpticalFlow<cv::Mat>(vx, vy, orient, mag);
 }
 

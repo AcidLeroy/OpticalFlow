@@ -229,7 +229,10 @@ void UpdateStats(const cv::Mat& binary_image, const cv::Mat& next_mat,
   constexpr int num_bins = 25;
   stats::GetHistoAround(binary_image, num_bins, next_mat, bg_histogram);
 
-  const float magnitude_range[2] = {0, 1};
+  const float magnitude_range[2] = {0, 10};
+  auto min_max = cv_utils::GetMinMax(magnitude);
+  //  std::cout << "magnitude min = " << min_max[0]
+  //            << " magnitude max = " << min_max[1] << std::endl;
   // Update magnitude histogram
   stats::UpdateHistogram(bin, magnitude, magnitude_histogram, magnitude_range,
                          num_bins);
@@ -274,7 +277,7 @@ class MotionEstimation {
           flow->CalculateVectors(*current_frame, *next_frame);
       mat_type binary_image;
       auto min_max = cv_utils::GetMinMax(stats.GetMagnitude());
-      cv::threshold(stats.GetMagnitude(), binary_image, 0.75 * min_max[1], 1,
+      cv::threshold(stats.GetMagnitude(), binary_image, 0.25 * min_max[1], 1,
                     cv::THRESH_BINARY);
       // stats::PrintMinMax(binary_image, "binary image");
 
@@ -296,10 +299,14 @@ class MotionEstimation {
     }
     //    std::cout << "x centroids = " << std::endl << centroids_ << std::endl;
     // Collect cdfs from video
+    //    std::cout << "magnitude histogram " << std::endl <<
+    //    magnitude_histogram_
+    //              << std::endl;
     cv::Mat x_cent_cdf, y_cent_cdf, orient_cent_cdf, bg_cdf, motion_mag_cdf,
         motion_orient_cdf;
 
-    // std::cout << "Magnitude Histogram " << magnitude_histogram_ << std::endl;
+    //    std::cout << "Magnitude Histogram " << magnitude_histogram_ <<
+    //    std::endl;
 
     NormalizeInternalHistogramCdfs(*(current_frame->GetMat()), &x_cent_cdf,
                                    &y_cent_cdf, &orient_cent_cdf, &bg_cdf,
