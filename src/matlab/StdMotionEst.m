@@ -82,7 +82,7 @@ classdef StdMotionEst < handle % Inherit all of the properties
             end
             
             % Plot them all
-            imgObj.PlotAllHistos(imgObj.VideoName);
+            %imgObj.PlotAllHistos(imgObj.VideoName);
             
             % Compute the CDFs:
             Xmax = size(Comp, 2);
@@ -116,37 +116,37 @@ classdef StdMotionEst < handle % Inherit all of the properties
             Motion_orient_CDF = cumsum(imgObj.MotionOrientHisto)./sum(imgObj.MotionOrientHisto(:));
         end
         
-        function PlotFlowComp(imgObj, Comp, frameNum, frameRGB, flow, Threshold)
-            % 1. Determine the magnitude of the motion to threshold
-            % 2. Extract the componennts.
-            % 3. Get 'Orientation' using regionprops
-            % 4. Generate CDF/histogram of orientations for classification.
-            % 5. Generate CDF/histogram of centroid x.
-            % 6. Generate CDF/histogram of centroid y.
-            figure(1);
-            subplot(4,1,1);
-            imshow(frameRGB)
-            hold on
-            plot(flow,'DecimationFactor',[5 5],'ScaleFactor', 50);
-            hold off
-            title(sprintf('Method=%s frame=%.0f', imgObj.MotionEstMethod, frameNum));
-            
-            subplot(4,1,2);
-            imagesc(flow.Magnitude), axis image, colormap(gray);
-            title('Magnitude of the motion');
-            
-            subplot(4,1,3);
-            imagesc(Comp), axis image, colormap(gray);
-            title(sprintf('Extracted component t=%f', Threshold));  
-            
-            subplot(4,1,4);
-            [N, X]  = hist(flow.Magnitude(:), 100);
-            N(1:10) = 1;
-            plot(X, N);
-            title('Histogram of the motion magnitude');
-            
-            drawnow
-        end
+%         function PlotFlowComp(imgObj, Comp, frameNum, frameRGB, flow, Threshold)
+%             % 1. Determine the magnitude of the motion to threshold
+%             % 2. Extract the componennts.
+%             % 3. Get 'Orientation' using regionprops
+%             % 4. Generate CDF/histogram of orientations for classification.
+%             % 5. Generate CDF/histogram of centroid x.
+%             % 6. Generate CDF/histogram of centroid y.
+%             figure(1);
+%             subplot(4,1,1);
+%             imshow(frameRGB)
+%             hold on
+%             plot(flow,'DecimationFactor',[5 5],'ScaleFactor', 50);
+%             hold off
+%             title(sprintf('Method=%s frame=%.0f', imgObj.MotionEstMethod, frameNum));
+%             
+%             subplot(4,1,2);
+%             imagesc(flow.Magnitude), axis image, colormap(gray);
+%             title('Magnitude of the motion');
+%             
+%             subplot(4,1,3);
+%             imagesc(Comp), axis image, colormap(gray);
+%             title(sprintf('Extracted component t=%f', Threshold));  
+%             
+%             subplot(4,1,4);
+%             [N, X]  = hist(flow.Magnitude(:), 100);
+%             N(1:10) = 1;
+%             plot(X, N);
+%             title('Histogram of the motion magnitude');
+%             
+%             drawnow
+%         end
         
         function UpdateStats(imgObj, Comp, frameGray, mags, orients)
            % Updates histogram stats based on the frame.
@@ -195,78 +195,78 @@ classdef StdMotionEst < handle % Inherit all of the properties
           imgObj.Histo = imgObj.Histo + N;
         end
         
-        function PlotAllHistos(imgObj, str)
-            figure
-            title(str);
-            
-            NumOfBins = 25;
-            L = imgObj.LastElement;
-            
-            disp(sprintf('L = %d', L));
-            
-            subplot(6,2,1);
-            plotHisto(imgObj.CentroidsX(1:L), NumOfBins, 'Centroid X histo');
-            subplot(6,2,2);
-            plotCDF(imgObj.CentroidsX(1:L), NumOfBins, 'Centroid X CDF');
-            
-            subplot(6,2,3);
-            plotHisto(imgObj.CentroidsY(1:L), NumOfBins, 'Centroid Y histo');
-            subplot(6,2,4);
-            plotCDF(imgObj.CentroidsY(1:L), NumOfBins, 'Centroid Y CDF');
-            
-            subplot(6,2,5);
-            plotHisto(imgObj.Orientations(1:L), NumOfBins, 'Orientations histo');
-            subplot(6,2,6);
-            plotCDF(imgObj.Orientations(1:L), NumOfBins, 'Orientations CDF');
-            
-            subplot(6,2,7);
-            plot(imgObj.Histo);
-            title('Surround values histogram');
-            subplot(6,2,8);
-            plot(cumsum(imgObj.Histo)./sum(imgObj.Histo(:)));
-            title('Surround values CDF');
-            
-            subplot(6,2,9);
-            plot(imgObj.MotionMagHisto);
-            title('Motion magnitude histo');
-            subplot(6,2,10);
-            plot(cumsum(imgObj.MotionMagHisto)./sum(imgObj.MotionMagHisto(:)));
-            title('Motion magnitude CDF');
-            
-            subplot(6,2,11);
-            plot(imgObj.MotionOrientHisto);
-            title('Motion orientation histo');
-            subplot(6,2,12);
-            plot(cumsum(imgObj.MotionOrientHisto)./sum(imgObj.MotionOrientHisto(:)));
-            title('Motion orientation CDF');
-        end
+%         function PlotAllHistos(imgObj, str)
+%             figure
+%             title(str);
+%             
+%             NumOfBins = 25;
+%             L = imgObj.LastElement;
+%             
+%             disp(sprintf('L = %d', L));
+%             
+%             subplot(6,2,1);
+%             plotHisto(imgObj.CentroidsX(1:L), NumOfBins, 'Centroid X histo');
+%             subplot(6,2,2);
+%             plotCDF(imgObj.CentroidsX(1:L), NumOfBins, 'Centroid X CDF');
+%             
+%             subplot(6,2,3);
+%             plotHisto(imgObj.CentroidsY(1:L), NumOfBins, 'Centroid Y histo');
+%             subplot(6,2,4);
+%             plotCDF(imgObj.CentroidsY(1:L), NumOfBins, 'Centroid Y CDF');
+%             
+%             subplot(6,2,5);
+%             plotHisto(imgObj.Orientations(1:L), NumOfBins, 'Orientations histo');
+%             subplot(6,2,6);
+%             plotCDF(imgObj.Orientations(1:L), NumOfBins, 'Orientations CDF');
+%             
+%             subplot(6,2,7);
+%             plot(imgObj.Histo);
+%             title('Surround values histogram');
+%             subplot(6,2,8);
+%             plot(cumsum(imgObj.Histo)./sum(imgObj.Histo(:)));
+%             title('Surround values CDF');
+%             
+%             subplot(6,2,9);
+%             plot(imgObj.MotionMagHisto);
+%             title('Motion magnitude histo');
+%             subplot(6,2,10);
+%             plot(cumsum(imgObj.MotionMagHisto)./sum(imgObj.MotionMagHisto(:)));
+%             title('Motion magnitude CDF');
+%             
+%             subplot(6,2,11);
+%             plot(imgObj.MotionOrientHisto);
+%             title('Motion orientation histo');
+%             subplot(6,2,12);
+%             plot(cumsum(imgObj.MotionOrientHisto)./sum(imgObj.MotionOrientHisto(:)));
+%             title('Motion orientation CDF');
+%         end
         
-        function PlotFlow(imgObj, frameNum, frameRGB, flow)
-            % Plots input video, abs(Vx), abs(Vy), orientation,
-            % and magnitude of the motion.
-              subplot(5,1,1);
-              imshow(frameRGB)
-              hold on
-              plot(flow,'DecimationFactor',[5 5],'ScaleFactor', 50);
-              hold off
-              title(sprintf('Method=%s frame=%.0f', imgObj.MotionEstMethod, frameNum));
-              
-              subplot(5,1,2);
-              imagesc(abs(flow.Vx)), axis image, colormap(gray);
-              title('abs(Vx) component');
-              
-              subplot(5,1,3);
-              imagesc(abs(flow.Vy)), axis image, colormap(gray);
-              title('abs(Vy) component');
-              
-              subplot(5,1,4);
-              imagesc(flow.Magnitude), axis image, colormap(gray);
-              title('Magnitude of the motion');
-              
-              subplot(5,1,5);
-              imagesc(flow.Orientation), axis image, colormap(gray);
-              title('Orientation of the motion');
-        end
+%         function PlotFlow(imgObj, frameNum, frameRGB, flow)
+%             % Plots input video, abs(Vx), abs(Vy), orientation,
+%             % and magnitude of the motion.
+%               subplot(5,1,1);
+%               imshow(frameRGB)
+%               hold on
+%               plot(flow,'DecimationFactor',[5 5],'ScaleFactor', 50);
+%               hold off
+%               title(sprintf('Method=%s frame=%.0f', imgObj.MotionEstMethod, frameNum));
+%               
+%               subplot(5,1,2);
+%               imagesc(abs(flow.Vx)), axis image, colormap(gray);
+%               title('abs(Vx) component');
+%               
+%               subplot(5,1,3);
+%               imagesc(abs(flow.Vy)), axis image, colormap(gray);
+%               title('abs(Vy) component');
+%               
+%               subplot(5,1,4);
+%               imagesc(flow.Magnitude), axis image, colormap(gray);
+%               title('Magnitude of the motion');
+%               
+%               subplot(5,1,5);
+%               imagesc(flow.Orientation), axis image, colormap(gray);
+%               title('Orientation of the motion');
+%         end
     end
     
     %% Private methods: Not visible to outside objects.
