@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 
 from __future__ import print_function
 
@@ -95,12 +95,14 @@ def main():
     parser.add_argument('--queue_name', type=str, default='default', help='Name of the queue to use for adding the messages. '
                                                                           'If the queue does not already exist, one is created.'
                                                                           ' The default queue is named \'default\'.')
+    parser.add_argument('--output_file', type=str, default='output.csv', help='Name of the file to store the results')
 
     args = parser.parse_args()
 
 
     input_file = os.path.abspath(args.input_file)
     queue_name = args.queue_name
+    output_file = os.path.abspath(args.output_file)
 
     print("Processing file = ", input_file)
     print("Using queue = ", queue_name, " for putting video paths")
@@ -155,7 +157,7 @@ def main():
     header = ['Filename,CenX_CDF,CenY_CDF,Orient_CDF,Histo_CDF,Motion_mag_CDF,Motion_orient_CDF,Classification\n']
     message_list = header + message_list
     message_list = ('').join(message_list)
-    with open('output.csv', 'wb') as f:
+    with open(output_file, 'wb') as f:
         f.write(message_list)
 
 
