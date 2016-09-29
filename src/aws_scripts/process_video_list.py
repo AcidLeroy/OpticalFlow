@@ -66,6 +66,15 @@ def ComputeResults(program, input_video_file, classification, algorithm):
     results = subprocess.check_output(cmd)
     return results
 
+def ComputeResultsMatlab(program, input_video_file, classification, algorithm):
+    out_file = 'output.txt'
+    cmd = [program, classification, input_video_file, 'HS', out_file] # harcode MATLAB to use HornSchunk
+    results = subprocess.check_output(cmd)
+    with open(out_file) as f:
+        data = f.read()
+    os.remove(out_file)
+    return data
+
 
 
 def main():
@@ -114,7 +123,12 @@ def main():
 
                 # Run extract features command
                 print("Computing results on ", local_video_file, " ...")
-                results = ComputeResults(program, local_video_file, classification, algorithm)
+                if 'mextract_features' not in program:
+                    print('Using C++ Version of Algorithm')
+                    results = ComputeResults(program, local_video_file, classification, algorithm)
+                else:
+                    print('Using MATLAB Version of Algorithm')
+                    results = ComputeResultsMatlab(program, local_video_file, classification, algorithm)
                 print("Done!")
 
                 # Prepend s3 bucket filename to results
