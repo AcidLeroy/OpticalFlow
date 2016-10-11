@@ -65,22 +65,24 @@ def ReceiveNMessagesFromOutputQueue(output_queue, expected_files):
     try:
         message_list = []
         number_messages = len(expected_files)
+        counter = 1
         while len(message_list) != number_messages:
-            for message in output_queue.receive_messages():
+            for message in output_queue.receive_messages(MaxNumberOfMessages=10):
                 expected_files, message_list, added_message = PopulateMessageList(expected_files, message_list, message.body)
                 # Only delete the message if we added it our list, otherwise leave it.
                 if added_message:
                     message.delete()
-            OKGREEN = '\033[92m'
-            ENDC = '\033[0m'
-            print("Waiting for the following files to be processed:", end="")
-            print(OKGREEN, end="")
-            print('\n\t', end="")
-            print(('\n\t').join(expected_files))
-            print(ENDC, end="")
-            print()
-            sys.stdout.flush()
-            sleep(5)
+            if 10 % counter == 0:
+                OKGREEN = '\033[92m'
+                ENDC = '\033[0m'
+                print("Waiting for the following files to be processed:", end="")
+                print(OKGREEN, end="")
+                print('\n\t', end="")
+                print(('\n\t').join(expected_files))
+                print(ENDC, end="")
+                print()
+                sys.stdout.flush()
+            sleep(1)
     except KeyboardInterrupt as e:
         print("Stopping loop even though all messages were not received...")
 
@@ -104,32 +106,29 @@ def main():
     queue_name = args.queue_name
     output_file = os.path.abspath(args.output_file)
 
+    add_videos(input_file, output_file, queue_name)
+
+
+def add_videos(input_file, output_file, queue_name):
     print("Processing file = ", input_file)
     print("Using queue = ", queue_name, " for putting video paths")
-
     # Set up the queue for receiving the output of the compute nodes
     output_queue = InitializeOutputQueue("feature_queue")
-
     df = pd.read_csv(input_file)
     # Create the messages to send to sqs
     batch_messages = mt.create_messages_from_df(df)
-
     # Create a queue or retrieve one with the same name
     sqs = boto3.resource('sqs')
     queue = sqs.create_queue(QueueName=queue_name)
-
     # Send the messages to SQS
     for messages in batch_messages:
         response = queue.send_messages(Entries=messages)
         print("Errors received from response: ", response.get('Failed'))
 
-
-
     # Wait for input queue to become empty
     num_messages = GetMessagesInQueue(sqs, queue_name)
-
     start = time.time()
-    zero_counter = 0
+    zero_counter = 1
     while zero_counter < 3:
         print("There are ", num_messages, " remaining in queue")
         sleep(1)
@@ -138,21 +137,16 @@ def main():
             zero_counter += 1
         else:
             zero_counter = 0
-
     stop = time.time()
     print("It took ", stop - start, " seconds for all messages to be ingested.")
-
     # Retrieve messages from the sqs queue
     filenames_to_receive = list(df['path'])
-
     # Poll until all the messages have been received.
     print("Wating for all messages to be processed...")
     message_list = ReceiveNMessagesFromOutputQueue(output_queue, filenames_to_receive)
     print("Done!")
-
     stop = time.time()
     print("It took ", stop - start, "seconds to process ", len(message_list), " videos")
-
     # save messages to a file
     header = ['Filename,CenX_CDF,CenY_CDF,Orient_CDF,Histo_CDF,Motion_mag_CDF,Motion_orient_CDF,Classification\n']
     message_list = header + message_list
